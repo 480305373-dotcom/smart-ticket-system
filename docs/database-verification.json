@@ -1,0 +1,24 @@
+{
+  "users": 9,
+  "tickets": 34,
+  "demoTickets": 25,
+  "articles": 12,
+  "comments": 26,
+  "history": 49,
+  "seedMarkers": 1,
+  "bcryptUsers": 9,
+  "priorities": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "statuses": [
+    "CLOSED",
+    "IN_PROGRESS",
+    "OPEN",
+    "RESOLVED"
+  ],
+  "result": "PASS"
+}

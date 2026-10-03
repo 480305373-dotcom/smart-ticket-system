@@ -1,0 +1,5 @@
+# Copy to application-local.properties (ignored by Git).
+# DB_PASSWORD environment variable overrides the local development value.
+spring.datasource.url=jdbc:postgresql://localhost:5432/intelligent_ticket
+spring.datasource.username=postgres
+spring.datasource.password=${DB_PASSWORD:replace-with-your-local-password}

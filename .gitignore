@@ -1,0 +1,21 @@
+# Environment variables
+.env
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Maven
+target/
+backend/target/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+frontend/node_modules/
+frontend/dist/
+backend/config/application-local.properties
+*.pid

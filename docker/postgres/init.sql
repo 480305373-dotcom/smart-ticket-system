@@ -1,0 +1,38 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS app_user (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'USER'
+);
+
+CREATE TABLE IF NOT EXISTS ticket (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) NOT NULL DEFAULT 'OPEN',
+    priority INTEGER NOT NULL DEFAULT 3,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id BIGINT NOT NULL,
+    CONSTRAINT fk_ticket_user
+        FOREIGN KEY (user_id)
+        REFERENCES app_user(id),
+    CONSTRAINT chk_ticket_priority
+        CHECK (priority BETWEEN 1 AND 5)
+);
+
+CREATE TABLE IF NOT EXISTS operation_log (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT,
+    action VARCHAR(100) NOT NULL,
+    target_type VARCHAR(100),
+    target_id BIGINT,
+    detail TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_operation_log_user
+        FOREIGN KEY (user_id)
+        REFERENCES app_user(id)
+);

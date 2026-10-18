@@ -16,7 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 /** Opt in with -Dinfra.tests=true after starting the project Compose services. */
-@SpringBootTest
+@SpringBootTest(properties = "app.cache.key-prefix=smartticket:infra-test-cache:")
 @ActiveProfiles({"dev", "infra"})
 @EnabledIfSystemProperty(named = "infra.tests", matches = "true")
 class InfrastructureTests {
@@ -28,6 +28,7 @@ class InfrastructureTests {
   @Autowired TokenBlacklistService blacklist;
   @Autowired DeadLetterRecoveryService recovery;
   @Autowired org.springframework.amqp.rabbit.core.RabbitTemplate rabbit;
+  @Autowired org.springframework.cache.CacheManager cacheManager;
 
   private Long owner() {
     return jdbc.queryForObject("SELECT id FROM app_user WHERE username='dev_zhangsan'", Long.class);
@@ -112,13 +113,19 @@ class InfrastructureTests {
 
   @Test
   void statisticsCacheIsJsonAndPermissionScoped() {
-    tickets.getStatistics(owner(), false);
-    var key = "smartticket:cache:v3:ticketStatistics::USER_" + owner();
-    String json = redis.opsForValue().get(key);
-    assertNotNull(json);
-    assertTrue(json.contains("total"));
-    assertTrue(redis.getExpire(key) > 0);
-    assertEquals(0, tickets.getStatistics(owner(), false).getUserCount());
+    assertInstanceOf(org.springframework.data.redis.cache.RedisCacheManager.class, cacheManager);
+    var key = "smartticket:infra-test-cache:ticketStatistics::USER_" + owner();
+    redis.delete(key);
+    try {
+      tickets.getStatistics(owner(), false);
+      String json = redis.opsForValue().get(key);
+      assertNotNull(json, "Statistics must be written to the real Redis test namespace");
+      assertTrue(json.contains("total"));
+      assertTrue(redis.getExpire(key) > 0);
+      assertEquals(0, tickets.getStatistics(owner(), false).getUserCount());
+    } finally {
+      redis.delete(key);
+    }
   }
 
   @Test

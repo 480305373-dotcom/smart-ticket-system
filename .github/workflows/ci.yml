@@ -57,7 +57,7 @@ jobs:
       - name: Verify Nginx, infrastructure and monitoring
         run: python3 scripts/deployment_smoke.py --monitoring
       - name: Deployment diagnostics on failure
-        if: failure()
+        if: failure() && hashFiles('.runtime/production.env') != ''
         run: docker compose -p smartticket-production --env-file .runtime/production.env -f compose.yaml -f compose.prod.yaml --profile monitoring logs --tail=80
       - name: Save deployment verification
         if: success()

@@ -16,12 +16,16 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 public class CacheConfig {
 
   @Bean
-  public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+  public RedisCacheManager cacheManager(
+      RedisConnectionFactory connectionFactory,
+      @org.springframework.beans.factory.annotation.Value(
+              "${app.cache.key-prefix:smartticket:cache:v3:}")
+          String keyPrefix) {
 
     RedisCacheConfiguration config =
         RedisCacheConfiguration.defaultCacheConfig()
             .entryTtl(Duration.ofMinutes(10))
-            .computePrefixWith(name -> "smartticket:cache:v3:" + name + "::")
+            .computePrefixWith(name -> keyPrefix + name + "::")
             .serializeValuesWith(
                 org.springframework.data.redis.serializer.RedisSerializationContext
                     .SerializationPair.fromSerializer(

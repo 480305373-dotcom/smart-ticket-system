@@ -134,3 +134,7 @@ node scripts/ui_smoke.cjs
 中间件测试连接已有服务，默认不启用；`-Dinfra.tests=true` 明确打开。CI 也使用这一参数。浏览器验证需要 Playwright/Chromium，可用 PLAYWRIGHT_MODULE 指向已有安装目录。测试只清理自己创建的资源；死信测试在有非测试业务死信时跳过，不消费别人的待处理消息。
 
 验证证据：docs/enterprise-verification.json、docs/ai-verification.json、docs/api-verification.json、docs/ui-verification.json 与 docs/screenshots。CI 文件已提供，远程工作流运行状态以 GitHub 实际执行为准。
+
+成品容器验证：`python scripts/deployment_smoke.py`。启用监控后使用 `python scripts/deployment_smoke.py --monitoring`，会真实查询 Prometheus 与 Grafana。此验收脚本使用显式 `-Demo` 的隔离部署账号，创建并清理自己的临时工单；正式无演示数据的站点不使用它。CI 在每次构建后部署完整 Docker 监控栈并执行该验收，验收 JSON 作为工作流产物保留。
+
+发布包：运行 `python scripts/package_release.py` 生成 `artifacts/smart-ticket-system-complete.zip` 和 SHA-256 文件。包内包含源码、可执行 JAR、前端 dist、部署与验证脚本及逐文件校验清单，排除密码、备份、运行日志和个人文档。解压后可运行 `./scripts/deploy-local.ps1 -Demo -WithAi -Monitoring -Prebuilt -Build`；仍需要 Docker 及已准备好的本地 Ollama 模型，首次镜像下载时间取决于网络。

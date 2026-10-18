@@ -25,6 +25,9 @@ public class SystemController {
   @Value("${app.ai.enabled:false}")
   private boolean aiEnabled;
 
+  @Value("${app.registration.enabled:true}")
+  private boolean registrationEnabled;
+
   public SystemController(
       JdbcTemplate jdbc,
       StringRedisTemplate redis,
@@ -40,6 +43,11 @@ public class SystemController {
   public ApiResponse<?> capabilities() {
     return ApiResponse.success(
         Map.of("redis", redisEnabled, "rabbitmq", mqEnabled, "ai", aiEnabled));
+  }
+
+  @GetMapping("/system/public-config")
+  public ApiResponse<?> publicConfig() {
+    return ApiResponse.success(Map.of("registrationEnabled", registrationEnabled));
   }
 
   @GetMapping("/admin/system")

@@ -12,8 +12,9 @@ Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。�
 |---|---|
 | 后端 | Java 21、Spring Boot 4.1.1、Spring MVC、Spring Security、JWT 0.13、MyBatis-Plus 3.5.17、Jakarta Validation、BCrypt |
 | 数据库 | PostgreSQL（当前机器已验证 PostgreSQL 18） |
+| 中间件与 AI | Redis 7、RabbitMQ 4、事务 Outbox / Inbox、Ollama、pgvector、Spring AI |
 | 前端 | Vue 3、Vite、JavaScript、Vue Router、Pinia、Axios、Element Plus |
-| 工程 | Maven Wrapper、npm lockfile、JUnit、真实 HTTP / Playwright 浏览器验证 |
+| 工程与运维 | Maven Wrapper、JUnit、Playwright、Docker Compose、Nginx、Actuator、Prometheus、Grafana、GitHub Actions |
 
 保留当前依赖版本，没有重建后端，也没有引入新的消息队列或微服务。
 
@@ -22,6 +23,8 @@ Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。�
 - 已有功能保留：注册、登录、BCrypt 密码、JWT、Spring Security、USER / ADMIN、工单 CRUD、分页、状态筛选、关键词搜索、用户数据隔离、操作审计。
 - 新增：中文 Vue 工作台、持久化登录状态、Dashboard 和状态分布图、优先级和用户名筛选、工单编辑和删除界面、评论时间线、自动处理历史、知识文章 CRUD 与发布、文章查询和分类、关键词知识推荐。
 - 本轮完善：管理员指派处理人、取消指派、处理人筛选、分配给我的工单队列、指派历史；创建接口支持 `X-Request-Id`，相同请求重试不会重复创建工单或创建历史。
+- 完整版：真实 Redis 缓存及原子限流、持久化 JWT 撤销、事务消息与消费去重、死信恢复、运行监控与审计、账号启停及改密、带出处的本地 AI 知识问答。
+- 交付：独立容器部署、正式管理员引导、监控认证、备份与隔离恢复演练、源码及可执行成品包。验收证据与具体边界见 [最终交付报告](docs/FINAL_DELIVERY.md)。
 - 查询优化：工单列表、评论与历史按批次查询用户名；Dashboard 使用一条聚合 SQL；推荐先读取匹配元数据，再加载最多三篇文章正文。Element Plus 按需加载组件与样式。
 - 修复：普通工单 PUT 接口无法绕过状态权限；创建时由服务器确定所属用户、OPEN 状态和时间；更新时间实际刷新；并发状态修改采用条件更新，避免错误历史；密码哈希不返回给前端。
 - 统一错误结构：参数错误 400、未登录/Token 无效 401、权限不足 403、资源不存在 404、冲突 409、登录限流 429、数据库不可用 503。
@@ -82,11 +85,13 @@ smart-ticket-system/
 | `ticket_request` | `(user_id, request_id)` 唯一键、请求内容摘要及结果工单；保证带请求编号的创建幂等 |
 | `knowledge_article` | 标题、摘要、正文、分类、关键词、DRAFT / PUBLISHED；作者外键 |
 | `operation_log` | 保留原有审计表；目标 ID 是审计信息，删除工单后审计仍保留 |
-| `token_blacklist` | dev 模式中保存 SHA-256 Token 摘要与到期时间，退出后重启也不会恢复该 Token |
+| `token_blacklist` | 保存 SHA-256 Token 摘要与到期时间；Redis 缓存丢失和重启不会恢复已撤销会话 |
+| `event_outbox` / `processed_message` | 业务事务中的待发事件、租约及重试记录，数据库消费去重 |
+| `knowledge_vector_index` / `smartticket_article_vectors` | 已发布知识版本指纹、独立 768 维向量检索 |
 | `demo_seed` | dev 数据初始化版本标记，防止重复插入 |
 | `vector_store` | 旧版 pgvector 扩展表，核心演示不使用 |
 
-`sql/schema.sql` 与后端资源中的 `schema.sql` 内容一致。只有 `dev` 模式自动执行安全结构脚本，使用 `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`，不执行 DROP、不清空原数据。其他环境应先按变更流程执行结构 SQL。
+`sql/schema.sql` 与后端资源中的 `schema.sql` 内容一致。`dev` 和 `prod` 模式执行幂等增量结构脚本，使用 `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`，不执行 DROP、不清空原数据。正式环境不加载演示数据；只有显式选择 `-Demo` 才同时启用 dev 数据初始化。
 
 `DataInitializer` 仅在 `@Profile("dev")` 下运行，以 PostgreSQL 事务、事务级 advisory lock 和 `demo_seed` 标记保证幂等。新增 25 条企业 IT 工单，覆盖 1–5 优先级、不同用户与不同时间；新增 12 篇有完整正文的知识文章，部分工单附带留言和状态历史。初始化使用正式 Service 产生工单历史，业务创建和管理员操作也自动产生历史。
 

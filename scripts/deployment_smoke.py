@@ -57,6 +57,9 @@ def main():
     wait_for('Nginx and API readiness', lambda: fetch(api + '/actuator/health/readiness')['status'] == 'UP')
     assert 'id="app"' in fetch(WEB + '/dashboard', raw=True)
     checks.append('SPA deep link and production static page')
+    assert fetch(api + '/system/public-config')['data']['registrationEnabled'] is False
+    fetch(api + '/users/register', {'username': 'deployment_disabled', 'password': 'Demo@12345'}, expected=403)
+    checks.append('Production self-registration is closed')
     admin = fetch(api + '/users/login', {'username': 'dev_admin1', 'password': 'Demo@12345'})['data']['token']
     user = fetch(api + '/users/login', {'username': 'dev_zhangsan', 'password': 'Demo@12345'})['data']['token']
     status = fetch(api + '/admin/system', token=admin)['data']

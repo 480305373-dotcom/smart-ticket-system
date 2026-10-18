@@ -112,6 +112,7 @@ public class SecurityConfig {
                 auth.requestMatchers(
                         "/users/register",
                         "/users/login",
+                        "/system/public-config",
                         "/actuator/health",
                         "/actuator/health/liveness",
                         "/actuator/health/readiness",

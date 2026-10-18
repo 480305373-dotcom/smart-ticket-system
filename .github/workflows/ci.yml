@@ -51,3 +51,17 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci && npm test && npm run build
         working-directory: frontend
+      - name: Deploy complete Docker stack
+        shell: pwsh
+        run: ./scripts/deploy-local.ps1 -Demo -Monitoring -Prebuilt -Build
+      - name: Verify Nginx, infrastructure and monitoring
+        run: python3 scripts/deployment_smoke.py --monitoring
+      - name: Deployment diagnostics on failure
+        if: failure()
+        run: docker compose -p smartticket-production --env-file .runtime/production.env -f compose.yaml -f compose.prod.yaml --profile monitoring logs --tail=80
+      - name: Save deployment verification
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-verification
+          path: docs/deployment-verification.json

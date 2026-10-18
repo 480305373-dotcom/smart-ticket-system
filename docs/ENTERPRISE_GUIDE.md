@@ -6,7 +6,7 @@
 
 ### 本机完整模式
 
-前提：Java 21、Node 22.12+、Docker Desktop。项目根目录已有 `.env` 时使用其中的原有 POSTGRES_PASSWORD，不要为已初始化的数据库随意换密码。
+前提：PowerShell 7.4+、Java 21、Node 22.12+、Docker Desktop（本机验证 Compose 5.5.1）。项目根目录已有 `.env` 时使用其中的原有 POSTGRES_PASSWORD，不要为已初始化的数据库随意换密码。
 
 ```powershell
 Copy-Item .env.example .env # 仅首次，已有文件不要覆盖
@@ -17,6 +17,8 @@ Copy-Item .env.example .env # 仅首次，已有文件不要覆盖
 访问 http://127.0.0.1:5173。脚本使用 enterprise,ai 配置，启动 PostgreSQL、Redis、RabbitMQ 与本机 Java/Vue。首次需要编译；后续复用当前构建，源码变更时重新构建。日志在 backend-dev.log / frontend-dev.log，不创建额外可见终端。
 
 AI 使用本机 Ollama：http://127.0.0.1:11434。模型：qwen3:4b、nomic-embed-text。模型需要事先准备；本机已经具备，本轮未重复下载。没有模型时去掉 -WithAi；AI 页面明确显示未启用，工单关键词推荐继续工作。
+
+停止本机后台进程：`.\scripts\stop-enterprise.ps1`；加 `-StopInfrastructure` 同时停止本项目中间件容器，保留数据卷。脚本核对 PID 和项目进程路径，不按 Java/Node 进程名批量结束任务。可用 `-WhatIf` 查看操作范围。
 
 enterprise 模式只作本地演示，包含 dev 初始化。演示账号：dev_zhangsan、dev_lisi、dev_wangwu（普通用户），dev_admin1（管理员）；密码均为 Demo@12345。
 

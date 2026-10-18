@@ -33,8 +33,7 @@ async function ask() {
   <section class="panel">
     <h2>知识问答助手</h2>
     <p class="muted">
-      使用 Ollama 本地模型、Embedding 与 pgvector
-      检索已发布知识。回答仅供排查参考，来源文章可直接核对。
+      根据已发布的团队知识解答问题。回答仅供排查参考，可打开来源文章核对具体步骤。
     </p>
     <el-alert
       v-if="!ready"
@@ -43,7 +42,7 @@ async function ask() {
       :closable="false"
     /><el-alert
       v-else-if="!enabled"
-      title="当前为轻量模式。启用 enterprise,ai 配置后可使用向量检索问答；工单关键词推荐仍可正常使用。"
+      title="知识问答暂未启用。你仍可搜索知识库，或提交工单获得帮助。"
       type="info"
       :closable="false"
     />

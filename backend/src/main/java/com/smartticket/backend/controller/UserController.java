@@ -19,6 +19,9 @@ public class UserController {
   private final JwtService jwtService;
   private final TokenBlacklistService tokenBlacklistService;
 
+  @org.springframework.beans.factory.annotation.Value("${app.registration.enabled:true}")
+  private boolean registrationEnabled;
+
   public UserController(
       UserService userService,
       JwtService jwtService,
@@ -44,6 +47,9 @@ public class UserController {
   // 注册
   @PostMapping("/users/register")
   public ApiResponse<User> register(@Valid @RequestBody RegisterRequest request) {
+    if (!registrationEnabled)
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.FORBIDDEN, "当前由管理员开通账号，请联系管理员");
     return ApiResponse.success(userService.register(request));
   }
 

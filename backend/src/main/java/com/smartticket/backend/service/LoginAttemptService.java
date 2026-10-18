@@ -1,6 +1,5 @@
 package com.smartticket.backend.service;
 
-import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -23,7 +22,8 @@ public class LoginAttemptService {
 
   public boolean isBlocked(String username) {
     if (enabled) {
-      String n = redis.opsForValue().get("login:fail:" + username);
+      String n =
+          redis.opsForValue().get("smartticket:login:fail:" + RateLimitService.digest(username));
       return n != null && Long.parseLong(n) >= 5;
     }
     Failure f = failures.get(username);
@@ -32,8 +32,11 @@ public class LoginAttemptService {
 
   public long recordFailure(String username) {
     if (enabled) {
-      Long n = redis.opsForValue().increment("login:fail:" + username);
-      if (n != null && n == 1) redis.expire("login:fail:" + username, Duration.ofMinutes(10));
+      Long n =
+          redis.execute(
+              RateLimitService.INCREMENT,
+              java.util.List.of("smartticket:login:fail:" + RateLimitService.digest(username)),
+              "600000");
       return n == null ? 0 : n;
     }
     long now = System.currentTimeMillis();
@@ -49,7 +52,7 @@ public class LoginAttemptService {
   }
 
   public void clearFailures(String username) {
-    if (enabled) redis.delete("login:fail:" + username);
+    if (enabled) redis.delete("smartticket:login:fail:" + RateLimitService.digest(username));
     else failures.remove(username);
   }
 }

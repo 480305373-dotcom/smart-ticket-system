@@ -4,6 +4,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: "/register",
+      component: () => import("./views/RegisterView.vue"),
+      meta: { public: true, title: "注册账号" },
+    },
+    {
       path: "/login",
       component: () => import("./views/LoginView.vue"),
       meta: { public: true, title: "登录" },
@@ -13,6 +18,31 @@ const router = createRouter({
       component: () => import("./Layout.vue"),
       redirect: "/dashboard",
       children: [
+        {
+          path: "account",
+          component: () => import("./views/AccountView.vue"),
+          meta: { title: "账号安全" },
+        },
+        {
+          path: "assistant",
+          component: () => import("./views/AssistantView.vue"),
+          meta: { title: "知识问答" },
+        },
+        {
+          path: "admin/system",
+          component: () => import("./views/SystemView.vue"),
+          meta: { title: "运行监控", admin: true },
+        },
+        {
+          path: "admin/users",
+          component: () => import("./views/UsersView.vue"),
+          meta: { title: "用户与权限", admin: true },
+        },
+        {
+          path: "admin/audit",
+          component: () => import("./views/AuditView.vue"),
+          meta: { title: "操作审计", admin: true },
+        },
         {
           path: "dashboard",
           component: () => import("./views/DashboardView.vue"),
@@ -81,7 +111,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuth();
   if (!to.meta.public && !auth.token) return "/login";
-  if (to.path === "/login" && auth.token) return "/dashboard";
+  if (to.meta.public && auth.token) return "/dashboard";
   if (to.meta.admin && !auth.isAdmin) return "/dashboard";
   document.title = `${to.meta.title || "工作台"} · Smart Ticket`;
 });

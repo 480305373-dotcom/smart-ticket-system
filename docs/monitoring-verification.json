@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "deployment": "Docker + Nginx",
+  "monitoring": true,
+  "checks": [
+    "Nginx and API readiness",
+    "SPA deep link and production static page",
+    "Real PostgreSQL, authenticated Redis and RabbitMQ",
+    "User/admin separation and dedicated monitor authentication",
+    "Outbox delivered and asynchronous audit recorded",
+    "Idempotent ticket creation through Nginx",
+    "Prometheus authenticated backend scrape is UP",
+    "Grafana database ready",
+    "Provisioned Grafana dashboard and working Prometheus datasource"
+  ]
+}

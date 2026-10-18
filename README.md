@@ -1,8 +1,10 @@
 # 企业智能工单与知识协同平台
 
+**完整版入口：** [运行与运维指南](docs/ENTERPRISE_GUIDE.md)。新增 Redis、事务消息、运维监控、账号管理、真实 Ollama/pgvector 问答及容器部署。原有轻量 dev 模式继续可用。
+
 Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。在已有 Spring Boot 后端上增量完善，使用 PostgreSQL 保存用户、工单、沟通记录、处理历史和知识文章。普通用户提交和跟进自己的工单，管理员管理全局工单并维护知识库。
 
-**当前核心演示版本采用关键词匹配推荐，不是大模型 AI。** 原有 Redis、RabbitMQ、Ollama、pgvector 扩展代码保留；`dev` 模式只依赖 PostgreSQL，不要求这些服务。旧版扩展说明归档于 [docs/legacy-extensions.md](docs/legacy-extensions.md)，这些扩展没有纳入本次完整运行验收。
+**工单详情的知识推荐仍采用关键词匹配。** `enterprise,ai` 模式另行提供 Ollama + Embedding + pgvector 检索问答，带真实知识出处；两者界面和原理明确区分。`dev` 模式只依赖 PostgreSQL。旧版扩展文档保留作历史参考，当前配置与运行方式以 [完整版指南](docs/ENTERPRISE_GUIDE.md) 为准。
 
 ## 技术栈
 
@@ -10,8 +12,9 @@ Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。�
 |---|---|
 | 后端 | Java 21、Spring Boot 4.1.1、Spring MVC、Spring Security、JWT 0.13、MyBatis-Plus 3.5.17、Jakarta Validation、BCrypt |
 | 数据库 | PostgreSQL（当前机器已验证 PostgreSQL 18） |
+| 中间件与 AI | Redis 7、RabbitMQ 4、事务 Outbox / Inbox、Ollama、pgvector、Spring AI |
 | 前端 | Vue 3、Vite、JavaScript、Vue Router、Pinia、Axios、Element Plus |
-| 工程 | Maven Wrapper、npm lockfile、JUnit、真实 HTTP / Playwright 浏览器验证 |
+| 工程与运维 | Maven Wrapper、JUnit、Playwright、Docker Compose、Nginx、Actuator、Prometheus、Grafana、GitHub Actions |
 
 保留当前依赖版本，没有重建后端，也没有引入新的消息队列或微服务。
 
@@ -20,6 +23,8 @@ Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。�
 - 已有功能保留：注册、登录、BCrypt 密码、JWT、Spring Security、USER / ADMIN、工单 CRUD、分页、状态筛选、关键词搜索、用户数据隔离、操作审计。
 - 新增：中文 Vue 工作台、持久化登录状态、Dashboard 和状态分布图、优先级和用户名筛选、工单编辑和删除界面、评论时间线、自动处理历史、知识文章 CRUD 与发布、文章查询和分类、关键词知识推荐。
 - 本轮完善：管理员指派处理人、取消指派、处理人筛选、分配给我的工单队列、指派历史；创建接口支持 `X-Request-Id`，相同请求重试不会重复创建工单或创建历史。
+- 完整版：真实 Redis 缓存及原子限流、持久化 JWT 撤销、事务消息与消费去重、死信恢复、运行监控与审计、账号启停及改密、带出处的本地 AI 知识问答。
+- 交付：独立容器部署、正式管理员引导、监控认证、备份与隔离恢复演练、源码及可执行成品包。验收证据与具体边界见 [最终交付报告](docs/FINAL_DELIVERY.md)。
 - 查询优化：工单列表、评论与历史按批次查询用户名；Dashboard 使用一条聚合 SQL；推荐先读取匹配元数据，再加载最多三篇文章正文。Element Plus 按需加载组件与样式。
 - 修复：普通工单 PUT 接口无法绕过状态权限；创建时由服务器确定所属用户、OPEN 状态和时间；更新时间实际刷新；并发状态修改采用条件更新，避免错误历史；密码哈希不返回给前端。
 - 统一错误结构：参数错误 400、未登录/Token 无效 401、权限不足 403、资源不存在 404、冲突 409、登录限流 429、数据库不可用 503。
@@ -80,11 +85,13 @@ smart-ticket-system/
 | `ticket_request` | `(user_id, request_id)` 唯一键、请求内容摘要及结果工单；保证带请求编号的创建幂等 |
 | `knowledge_article` | 标题、摘要、正文、分类、关键词、DRAFT / PUBLISHED；作者外键 |
 | `operation_log` | 保留原有审计表；目标 ID 是审计信息，删除工单后审计仍保留 |
-| `token_blacklist` | dev 模式中保存 SHA-256 Token 摘要与到期时间，退出后重启也不会恢复该 Token |
+| `token_blacklist` | 保存 SHA-256 Token 摘要与到期时间；Redis 缓存丢失和重启不会恢复已撤销会话 |
+| `event_outbox` / `processed_message` | 业务事务中的待发事件、租约及重试记录，数据库消费去重 |
+| `knowledge_vector_index` / `smartticket_article_vectors` | 已发布知识版本指纹、独立 768 维向量检索 |
 | `demo_seed` | dev 数据初始化版本标记，防止重复插入 |
 | `vector_store` | 旧版 pgvector 扩展表，核心演示不使用 |
 
-`sql/schema.sql` 与后端资源中的 `schema.sql` 内容一致。只有 `dev` 模式自动执行安全结构脚本，使用 `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`，不执行 DROP、不清空原数据。其他环境应先按变更流程执行结构 SQL。
+`sql/schema.sql` 与后端资源中的 `schema.sql` 内容一致。`dev` 和 `prod` 模式执行幂等增量结构脚本，使用 `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`，不执行 DROP、不清空原数据。正式环境不加载演示数据；只有显式选择 `-Demo` 才同时启用 dev 数据初始化。
 
 `DataInitializer` 仅在 `@Profile("dev")` 下运行，以 PostgreSQL 事务、事务级 advisory lock 和 `demo_seed` 标记保证幂等。新增 25 条企业 IT 工单，覆盖 1–5 优先级、不同用户与不同时间；新增 12 篇有完整正文的知识文章，部分工单附带留言和状态历史。初始化使用正式 Service 产生工单历史，业务创建和管理员操作也自动产生历史。
 
@@ -204,6 +211,15 @@ cd frontend
 | POST | `/users/register` | 公开 | 注册普通用户 |
 | POST | `/users/login` | 公开 | 验证账号密码并返回 JWT 与身份 |
 | POST | `/users/logout` | 登录 | 撤销当前 Token |
+| POST | `/users/change-password` | 登录 | 校验原密码、更新密码并撤销全部旧会话 |
+| GET / POST | `/admin/users` | ADMIN | 用户分页、创建普通账号 |
+| PATCH | `/admin/users/{id}` | ADMIN | 角色与启用状态，立即使旧会话失效 |
+| GET | `/admin/system` | ADMIN | 服务状态、消息队列与 outbox 记录 |
+| POST | `/admin/outbox/{id}/retry` | ADMIN | 重新投递达到重试上限的失败事件 |
+| POST | `/admin/mq/replay-dead-letter` | ADMIN | 先持久化再确认的死信重放 |
+| GET | `/system/capabilities` | 登录 | 当前真实启用的模块 |
+| POST | `/ai/assist` | 登录、AI 启用 | 向量检索问答及已发布文章来源 |
+| GET / POST | `/admin/ai/index` | ADMIN、AI 启用 | 索引状态与同步 |
 | GET | `/users/{id}` | 本人 / ADMIN | 查询用户，不返回密码哈希 |
 | GET | `/users/handlers` | ADMIN | 可指派管理员列表，仅返回 id / username |
 | GET | `/tickets` | 登录 | 保留旧列表，按角色隔离 |
@@ -241,6 +257,12 @@ cd frontend
 | URL | 页面 | 权限 |
 |---|---|---|
 | `/login` | 登录 | 未登录；已登录跳转概览 |
+| `/register` | 注册普通账号；prod 默认需管理员开通 | 未登录 |
+| `/account` | 修改密码、撤销全部旧会话 | 登录 |
+| `/assistant` | AI 知识问答或未启用说明 | 登录 |
+| `/admin/system` | 服务、消息、重试与知识索引 | ADMIN |
+| `/admin/users` | 创建账号、角色与启停管理 | ADMIN |
+| `/admin/audit` | 真实操作审计分页 | ADMIN |
 | `/dashboard` | 当前身份、真实统计、状态图、最近工单 | 登录 |
 | `/tickets` | 工单分页筛选 | USER 本人 / ADMIN 全部 |
 | `/tickets/create` | 创建工单 | 登录 |
@@ -273,7 +295,7 @@ npm install
 npm run build
 ```
 
-JUnit 的 Spring 集成测试使用 `@ActiveProfiles("dev")`，真实连接配置的 PostgreSQL。普通业务测试事务回滚自己的用户/工单；并发与事务失败测试使用独立事务并清理自己的测试记录。共 20 个测试，覆盖数据隔离、生命周期、指派、重复提交、并发更新、JWT 过期及数据库故障响应等。dev 初始化是正常的幂等初始化，不清空现有业务数据。
+JUnit 集成测试真实连接配置的 PostgreSQL。普通业务测试事务回滚自己的用户/工单；并发和事务失败测试使用独立事务并清理自己的记录。当前共 32 个测试；完整验收命令为 `mvn clean package '-Dinfra.tests=true'`，开启真实 Redis/RabbitMQ 集成测试。普通 `mvn test` 跳过需要中间件的 6 个测试。覆盖数据隔离、指派、幂等、并发、JWT、账号失效、缓存、消息确认、消费回滚、死信恢复与 AI 来源安全。dev 初始化保持幂等，不清空已有业务数据。
 
 后端启动后可重复运行真实 HTTP 验证：
 
@@ -304,6 +326,6 @@ HTTP/浏览器脚本创建临时工单和文章，通过同一 API 清理自己�
 9. `LoginView` → `TicketsView` → `TicketForm` → `TicketDetail`：从表单到请求再到数据库变化串起工单流程。
 10. `DashboardView` → 知识页面：理解真实统计、分类查询、草稿和发布。最后再阅读保留的缓存/MQ/AI 扩展。
 
-当前 dev 验收不依赖 Redis/RabbitMQ/Ollama；公开部署所需的 HTTPS、私有密钥、反向代理和多实例限流配置不属于本次本机演示运行。
+dev 继续只依赖 PostgreSQL；完整版提供私有密钥生成、Nginx、Redis 跨实例限流和监控配置。真实公网域名、HTTPS 和服务器环境由实际部署提供。详细运行方式和验证边界见完整版指南。
 
 演示脚本与面试讲解材料见 [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md)。仓库中的 SQL 和 Java 初始化器可复现演示数据；真实数据库文件、本机密码、JWT 会话、依赖目录和构建产物不上传。

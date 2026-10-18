@@ -1,0 +1,84 @@
+# Separate production project/volumes. Never reuses the existing demonstration volumes.
+services:
+  postgres:
+    container_name: smartticket-prod-postgres
+    ports: !reset []
+  redis:
+    container_name: smartticket-prod-redis
+    ports: !reset []
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD}"]
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep PONG"]
+  rabbitmq:
+    container_name: smartticket-prod-rabbitmq
+    ports: !reset []
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-smartticket}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD}
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: ${BACKEND_BUILD_TARGET:-production}
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${APP_PROFILES:-prod}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/intelligent_ticket
+      SPRING_DATASOURCE_USERNAME: smartticket
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-smartticket}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8088,http://127.0.0.1:8088}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      MONITOR_PASSWORD: ${MONITOR_PASSWORD:?Set MONITOR_PASSWORD}
+      TZ: Asia/Shanghai
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai
+      APP_MONITOR_ENABLED: "true"
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    stop_grace_period: 40s
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: ${FRONTEND_BUILD_TARGET:-production}
+    restart: unless-stopped
+    ports: ["127.0.0.1:8088:80"]
+    depends_on:
+      backend: {condition: service_healthy}
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [monitoring]
+    ports: ["127.0.0.1:9090:9090"]
+    volumes:
+      - ./docker/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./.runtime/monitor-password:/etc/prometheus/monitor-password:ro
+      - prometheus_data:/prometheus
+    depends_on: [backend]
+  grafana:
+    image: grafana/grafana:12.2.0
+    profiles: [monitoring]
+    ports: ["127.0.0.1:3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?Set GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/monitoring/grafana:/etc/grafana/provisioning:ro
+      - ./docker/monitoring/dashboard.json:/var/lib/grafana/dashboards/smart-ticket.json:ro
+    depends_on: [prometheus]
+volumes:
+  prometheus_data:
+  grafana_data:

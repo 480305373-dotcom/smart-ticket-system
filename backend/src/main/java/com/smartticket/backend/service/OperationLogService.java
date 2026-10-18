@@ -9,34 +9,29 @@ import org.springframework.stereotype.Service;
 @Service
 public class OperationLogService {
 
-    private final OperationLogMapper operationLogMapper;
+  private final OperationLogMapper operationLogMapper;
 
-    public OperationLogService(OperationLogMapper operationLogMapper) {
-        this.operationLogMapper = operationLogMapper;
-    }
+  public OperationLogService(OperationLogMapper operationLogMapper) {
+    this.operationLogMapper = operationLogMapper;
+  }
 
-    public void record(
-            Long userId,
-            String action,
-            Long targetId,
-            String detail
-    ) {
-        OperationLog log = new OperationLog();
+  public void record(Long userId, String action, Long targetId, String detail) {
+    OperationLog log = new OperationLog();
 
-        log.setUserId(userId);
-        log.setAction(action);
-        log.setTargetType("TICKET");
-        log.setTargetId(targetId);
-        log.setDetail(detail);
+    log.setUserId(userId);
+    log.setAction(action);
+    log.setTargetType("TICKET");
+    log.setTargetId(targetId);
+    log.setDetail(detail);
 
-        operationLogMapper.insert(log);
-    }
+    operationLogMapper.insert(log);
+  }
 
-    public IPage<OperationLog> getPage(long current, long size) {
-        TicketService.validatePage(current, size);
-        return operationLogMapper.selectPage(
-                new Page<>(current, size),
-                null
-        );
-    }
+  public IPage<OperationLog> getPage(long current, long size) {
+    TicketService.validatePage(current, size);
+    return operationLogMapper.selectPage(
+        new Page<>(current, size),
+        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<OperationLog>()
+            .orderByDesc(OperationLog::getId));
+  }
 }

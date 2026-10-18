@@ -2,14 +2,12 @@ package com.smartticket.backend.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.smartticket.backend.dto.ApiResponse;
-import com.smartticket.backend.dto.TicketCreatedEvent;
 import com.smartticket.backend.dto.TicketStatistics;
 import com.smartticket.backend.dto.UpdateTicketStatusRequest;
 import com.smartticket.backend.entity.Ticket;
 import com.smartticket.backend.enums.TicketStatus;
 import com.smartticket.backend.security.AuthUser;
 import com.smartticket.backend.service.OperationLogService;
-import com.smartticket.backend.service.TicketEventPublisher;
 import com.smartticket.backend.service.TicketService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -23,15 +21,10 @@ public class TicketController {
 
   private final TicketService ticketService;
   private final OperationLogService operationLogService;
-  private final TicketEventPublisher ticketEventPublisher;
 
-  public TicketController(
-      TicketService ticketService,
-      OperationLogService operationLogService,
-      TicketEventPublisher ticketEventPublisher) {
+  public TicketController(TicketService ticketService, OperationLogService operationLogService) {
     this.ticketService = ticketService;
     this.operationLogService = operationLogService;
-    this.ticketEventPublisher = ticketEventPublisher;
   }
 
   // 查询工单
@@ -59,9 +52,6 @@ public class TicketController {
 
     var result = ticketService.createWithRequest(ticket, requestId);
     Ticket created = result.ticket();
-    if (result.created())
-      ticketEventPublisher.publishTicketCreated(
-          new TicketCreatedEvent(user.userId(), created.getId(), "NORMAL_CREATE"));
 
     return ApiResponse.success(created);
   }

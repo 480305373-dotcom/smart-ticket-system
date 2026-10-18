@@ -23,6 +23,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtService jwtService;
   private final TokenBlacklistService tokenBlacklistService;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private com.smartticket.backend.service.AccountSecurityService accounts;
+
   public JwtAuthenticationFilter(
       JwtService jwtService, TokenBlacklistService tokenBlacklistService) {
     this.jwtService = jwtService;
@@ -70,6 +73,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       }
 
       Long userId = userIdNumber.longValue();
+      Number version = claims.get("version", Number.class);
+      if (accounts != null
+          && !accounts.valid(userId, role, version == null ? 0 : version.intValue())) {
+        error(response, 401, "账号状态已变更，请重新登录");
+        return;
+      }
 
       AuthUser authUser = new AuthUser(userId, username, role);
 

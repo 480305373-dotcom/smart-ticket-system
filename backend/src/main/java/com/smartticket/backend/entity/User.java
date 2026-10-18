@@ -1,59 +1,80 @@
 package com.smartticket.backend.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @TableName("app_user")
 public class User {
-    @TableId(type = IdType.AUTO)
-    private Long id;
-    @NotBlank
-    @Size(max = 50)
-    private String username;
+  @TableId(type = IdType.AUTO)
+  private Long id;
 
-    @JsonIgnore
-    @TableField("password_hash")
-    @NotBlank
-    @Size(max = 255)
-    private String passwordHash;
+  @NotBlank
+  @Size(max = 50)
+  private String username;
 
-    @NotBlank
-    @Size(max = 20)
-    private String role = "USER";
+  @JsonIgnore
+  @TableField("password_hash")
+  @NotBlank
+  @Size(max = 255)
+  private String passwordHash;
 
-    public Long getId() {
-        return id;
-    }
+  @NotBlank
+  @Size(max = 20)
+  private String role = "USER";
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  private Boolean enabled;
+  @JsonIgnore private Integer authVersion;
 
-    public String getUsername() {
-        return username;
-    }
+  public Boolean getEnabled() {
+    return enabled;
+  }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+  public void setEnabled(Boolean enabled) {
+    this.enabled = enabled;
+  }
 
-    public String getPasswordHash() {
-        return passwordHash;
-    }
+  public Integer getAuthVersion() {
+    return authVersion;
+  }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
+  public void setAuthVersion(Integer version) {
+    this.authVersion = version;
+  }
 
-    public String getRole() {
-        return role;
-    }
+  public Long getId() {
+    return id;
+  }
 
-    public void setRole(String role) {
-        this.role = role;
-    }
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public String getPasswordHash() {
+    return passwordHash;
+  }
+
+  public void setPasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
+
+  public String getRole() {
+    return role;
+  }
+
+  public void setRole(String role) {
+    this.role = role;
+  }
 }

@@ -45,3 +45,21 @@ CREATE TABLE IF NOT EXISTS ticket_request (
  fingerprint VARCHAR(64) NOT NULL, ticket_id BIGINT REFERENCES ticket(id) ON DELETE SET NULL,
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
  PRIMARY KEY(user_id,request_id));
+
+-- v3: durable event delivery, consumer inbox, account session invalidation.
+CREATE TABLE IF NOT EXISTS event_outbox (
+ event_id VARCHAR(100) PRIMARY KEY, payload TEXT NOT NULL,
+ status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING','SENT','FAILED')),
+ attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ locked_until TIMESTAMP, lock_token VARCHAR(100), last_error VARCHAR(200),
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, sent_at TIMESTAMP);
+CREATE INDEX IF NOT EXISTS idx_outbox_pending ON event_outbox(next_attempt_at) WHERE status='PENDING';
+CREATE TABLE IF NOT EXISTS processed_message (
+ event_id VARCHAR(100) PRIMARY KEY, processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS auth_version INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_token_blacklist_expiry ON token_blacklist(expires_at);
+CREATE INDEX IF NOT EXISTS idx_operation_log_time ON operation_log(created_at DESC);
+CREATE TABLE IF NOT EXISTS knowledge_vector_index (
+ article_id BIGINT PRIMARY KEY REFERENCES knowledge_article(id) ON DELETE CASCADE,
+ fingerprint VARCHAR(64) NOT NULL, indexed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);

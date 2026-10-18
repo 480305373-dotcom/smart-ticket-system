@@ -6,6 +6,7 @@ const assert = require("node:assert/strict");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 const root = path.resolve(__dirname, "..");
 const base = process.env.SMART_TICKET_UI || "http://127.0.0.1:5173";
+const apiBase = process.env.SMART_TICKET_API || "http://localhost:8080";
 const errors = [],
   checks = [];
 const unique = `浏览器联调_${Date.now()}`;
@@ -47,7 +48,7 @@ async function run() {
     await page.locator(".stat-card").first().waitFor();
   }
   async function api(method, url, data) {
-    const response = await admin.request.fetch("http://localhost:8080" + url, {
+    const response = await admin.request.fetch(apiBase + url, {
       method,
       headers: { Authorization: "Bearer " + adminToken },
       data,
@@ -98,6 +99,25 @@ async function run() {
       () => JSON.parse(localStorage.getItem("smartticket-session")).token,
     );
     await screenshot(admin, "dashboard.png");
+    await admin.goto(base + "/admin/system");
+    await visible(admin,"服务与消息监控");
+    await screenshot(admin,"system.png");
+    mark("ADMIN运维页面读取真实依赖及事件状态");
+    await admin.goto(base + "/admin/users");
+    await admin.locator(".el-table__row").first().waitFor();
+    await screenshot(admin,"users.png");
+    mark("ADMIN用户与权限页面展示真实账号");
+    await admin.goto(base + "/admin/audit");
+    await admin.locator(".el-table__row").first().waitFor();
+    mark("ADMIN审计页面展示数据库记录");
+    await user.goto(base + "/assistant");
+    await visible(user,"知识问答助手");
+    await screenshot(user,"assistant.png");
+    mark("知识问答页面根据真实服务能力展示入口");
+    await user.goto(base + "/account");
+    await visible(user,"账号安全");
+    mark("USER账号安全页面可访问");
+    await user.goto(base + `/tickets/${ticketId}`);
     await admin.goto(base + `/tickets/${ticketId}`);
     await admin.locator(".el-form-item").filter({ hasText: "指派处理人" }).locator(".el-select__wrapper").click();
     await admin.getByRole("option", { name: "dev_admin1", exact: true }).click();

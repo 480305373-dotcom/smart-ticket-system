@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "../stores/auth";
 import api from "../api";
@@ -9,6 +9,12 @@ const form = reactive({ username: "", password: "" }),
   formRef = ref();
 const router = useRouter(),
   auth = useAuth();
+const registrationEnabled = ref(false);
+onMounted(async () => {
+  try {
+    registrationEnabled.value = (await api.get("/system/public-config")).registrationEnabled;
+  } catch {}
+});
 const rules = {
   username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
   password: [{ required: true, message: "请输入密码", trigger: "blur" }],
@@ -42,6 +48,7 @@ async function submit() {
       <span class="eyebrow">WELCOME BACK</span>
       <h2>登录工作台</h2>
       <p class="muted">使用企业账号进入服务空间</p>
+      <p v-if="registrationEnabled"><router-link to="/register">没有账号？注册普通账号</router-link></p>
       <el-alert
         v-if="error"
         :title="error"

@@ -1,6 +1,6 @@
 {
   "users": 9,
-  "tickets": 34,
+  "tickets": 39,
   "demoTickets": 25,
   "articles": 12,
   "comments": 26,
@@ -17,8 +17,7 @@
   "statuses": [
     "CLOSED",
     "IN_PROGRESS",
-    "OPEN",
-    "RESOLVED"
+    "OPEN"
   ],
   "result": "PASS"
 }

@@ -4,14 +4,15 @@ import jakarta.validation.constraints.NotBlank;
 
 public class AiChatRequest {
 
-    @NotBlank
-    private String message;
+  @NotBlank
+  @jakarta.validation.constraints.Size(max = 2000)
+  private String message;
 
-    public String getMessage() {
-        return message;
-    }
+  public String getMessage() {
+    return message;
+  }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
+  public void setMessage(String message) {
+    this.message = message;
+  }
 }

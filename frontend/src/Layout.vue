@@ -31,10 +31,15 @@ async function logout() {
         <router-link to="/tickets/create">创建工单</router-link>
         <p class="nav-label">知识中心</p>
         <router-link to="/knowledge">知识库</router-link>
+        <router-link to="/assistant">知识问答</router-link>
+        <router-link to="/account">账号安全</router-link>
         <template v-if="auth.isAdmin"
           ><p class="nav-label">管理中心</p>
           <router-link to="/admin/tickets">全部工单</router-link
           ><router-link to="/admin/assigned">分配给我的工单</router-link>
+          <router-link to="/admin/users">用户与权限</router-link>
+          <router-link to="/admin/system">运行监控</router-link>
+          <router-link to="/admin/audit">操作审计</router-link>
           <router-link to="/admin/knowledge">知识库管理</router-link></template
         >
       </nav>

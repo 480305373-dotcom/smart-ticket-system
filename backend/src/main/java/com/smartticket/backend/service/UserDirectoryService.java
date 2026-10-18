@@ -34,6 +34,7 @@ public class UserDirectoryService {
             new LambdaQueryWrapper<User>()
                 .select(User::getId, User::getUsername)
                 .eq(User::getRole, "ADMIN")
+                .eq(User::getEnabled, true)
                 .orderByAsc(User::getUsername))
         .stream()
         .map(u -> new UserOption(u.getId(), u.getUsername()))

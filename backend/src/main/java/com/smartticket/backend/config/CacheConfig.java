@@ -33,7 +33,16 @@ public class CacheConfig {
                         com.smartticket.backend.dto.TicketStatistics.class)))
             .disableCachingNullValues();
 
-    return RedisCacheManager.builder(connectionFactory)
+    // Spring Data Redis 4.1 defaults to asynchronous writes. This application needs
+    // committed cache changes and failures to be visible before returning success.
+    var writer =
+        org.springframework.data.redis.cache.RedisCacheWriter.create(
+            connectionFactory,
+            options ->
+                options
+                    .immediateWrites()
+                    .batchStrategy(org.springframework.data.redis.cache.BatchStrategies.scan(1000)));
+    return RedisCacheManager.builder(writer)
         .withCacheConfiguration("ticketStatistics", config)
         .transactionAware()
         .build();

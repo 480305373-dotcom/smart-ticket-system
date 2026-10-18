@@ -8,7 +8,9 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
-@org.springframework.context.annotation.Profile("!dev")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "app.redis.enabled",
+    havingValue = "true")
 @Configuration
 @EnableCaching
 public class CacheConfig {
@@ -19,10 +21,17 @@ public class CacheConfig {
     RedisCacheConfiguration config =
         RedisCacheConfiguration.defaultCacheConfig()
             .entryTtl(Duration.ofMinutes(10))
+            .computePrefixWith(name -> "smartticket:cache:v3:" + name + "::")
+            .serializeValuesWith(
+                org.springframework.data.redis.serializer.RedisSerializationContext
+                    .SerializationPair.fromSerializer(
+                    new org.springframework.data.redis.serializer.JacksonJsonRedisSerializer<>(
+                        com.smartticket.backend.dto.TicketStatistics.class)))
             .disableCachingNullValues();
 
     return RedisCacheManager.builder(connectionFactory)
         .withCacheConfiguration("ticketStatistics", config)
+        .transactionAware()
         .build();
   }
 }

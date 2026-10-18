@@ -5,7 +5,10 @@ import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.*;
 
 @Configuration
-@Profile("dev")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "app.redis.enabled",
+    havingValue = "false",
+    matchIfMissing = true)
 public class DevCacheConfig {
   @Bean
   public CacheManager cacheManager() {

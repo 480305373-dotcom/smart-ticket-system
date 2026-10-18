@@ -24,13 +24,19 @@ public class SecurityConfig {
     config.setAllowedOrigins(java.util.Arrays.asList(origins.split(",")));
     config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "X-Request-Id"));
+    config.setExposedHeaders(java.util.List.of("X-Request-Id", "Retry-After"));
     var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
     return source;
   }
 
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(
+      HttpSecurity http,
+      com.smartticket.backend.service.RateLimitService limits,
+      @org.springframework.beans.factory.annotation.Value("${app.rate-limit.per-minute:120}")
+          int perMinute)
+      throws Exception {
 
     http.csrf(csrf -> csrf.disable())
         .cors(org.springframework.security.config.Customizer.withDefaults())
@@ -106,16 +112,31 @@ public class SecurityConfig {
                 auth.requestMatchers(
                         "/users/register",
                         "/users/login",
+                        "/actuator/health",
+                        "/actuator/health/liveness",
+                        "/actuator/health/readiness",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/v3/api-docs/**")
                     .permitAll()
-                    .requestMatchers("/admin/**")
+                    .requestMatchers("/admin/**", "/actuator/**")
                     .hasRole("ADMIN")
                     .anyRequest()
                     .authenticated())
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(
+            new com.smartticket.backend.security.ApiRateLimitFilter(limits, perMinute),
+            JwtAuthenticationFilter.class);
 
     return http.build();
+  }
+
+  @Bean
+  public org.springframework.boot.web.servlet.FilterRegistrationBean<JwtAuthenticationFilter>
+      jwtRegistration() {
+    var registration =
+        new org.springframework.boot.web.servlet.FilterRegistrationBean<>(jwtAuthenticationFilter);
+    registration.setEnabled(false);
+    return registration;
   }
 }

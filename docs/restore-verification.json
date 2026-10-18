@@ -1,0 +1,12 @@
+{
+  "method": "pg_dump custom archive + isolated pg_restore",
+  "counts": {
+    "users": 9,
+    "tickets": 26,
+    "articles": 12,
+    "comments": 26,
+    "history": 49
+  },
+  "source": "smartticket-postgres",
+  "result": "PASS"
+}

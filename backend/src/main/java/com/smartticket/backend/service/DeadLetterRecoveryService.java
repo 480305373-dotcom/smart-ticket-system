@@ -2,66 +2,49 @@ package com.smartticket.backend.service;
 
 import com.smartticket.backend.config.RabbitMqConfig;
 import com.smartticket.backend.dto.TicketCreatedEvent;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class DeadLetterRecoveryService {
+  private final RabbitTemplate rabbit;
+  private final OutboxService outbox;
 
-    private final RabbitTemplate rabbitTemplate;
+  @Value("${app.mq.enabled:false}")
+  private boolean enabled;
 
-    public DeadLetterRecoveryService(
-            RabbitTemplate rabbitTemplate
-    ) {
-        this.rabbitTemplate = rabbitTemplate;
-    }
+  public DeadLetterRecoveryService(RabbitTemplate rabbit, OutboxService outbox) {
+    this.rabbit = rabbit;
+    this.outbox = outbox;
+  }
 
-    /**
-     * 从死信队列取出一条消息，
-     * 重新发送到正常业务交换机。
-     */
-    public TicketCreatedEvent replayOne() {
-
-        Object message =
-                rabbitTemplate.receiveAndConvert(
-                        RabbitMqConfig.TICKET_AUDIT_DLQ,
-                        1000
-                );
-
-        // DLQ 当前没有消息
-        if (message == null) {
-            return null;
-        }
-
-        // 防止错误类型消息被重放
-        if (!(message instanceof TicketCreatedEvent event)) {
-            throw new IllegalStateException(
-                    "死信消息类型异常"
-            );
-        }
-
-        try {
-
-            // 重新发送回正常 Exchange
-            rabbitTemplate.convertAndSend(
-                    RabbitMqConfig.TICKET_EXCHANGE,
-                    RabbitMqConfig.TICKET_CREATED_ROUTING_KEY,
-                    event
-            );
-
+  public TicketCreatedEvent replayOne() {
+    if (!enabled) throw new ResponseStatusException(HttpStatus.CONFLICT, "消息队列未启用");
+    return rabbit.execute(
+        channel -> {
+          var delivery = channel.basicGet(RabbitMqConfig.TICKET_AUDIT_DLQ, false);
+          if (delivery == null) return null;
+          long tag = delivery.getEnvelope().getDeliveryTag();
+          try {
+            Message message =
+                new Message(
+                    delivery.getBody(),
+                    new org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter()
+                        .toMessageProperties(delivery.getProps(), delivery.getEnvelope(), "UTF-8"));
+            Object decoded = rabbit.getMessageConverter().fromMessage(message);
+            if (!(decoded instanceof TicketCreatedEvent event))
+              throw new IllegalArgumentException("Unsupported dead letter");
+            outbox.requeue(event);
+            channel.basicAck(tag, false);
             return event;
-
-        } catch (RuntimeException e) {
-
-            // 如果重新发送失败，
-            // 再放回死信交换机，避免直接丢失
-            rabbitTemplate.convertAndSend(
-                    RabbitMqConfig.TICKET_DLX,
-                    RabbitMqConfig.TICKET_DEAD_ROUTING_KEY,
-                    event
-            );
-
+          } catch (RuntimeException | java.io.IOException e) {
+            channel.basicNack(tag, false, true);
             throw e;
-        }
-    }
+          }
+        });
+  }
 }

@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: smart-ticket
+    metrics_path: /actuator/prometheus
+    basic_auth:
+      username: monitor
+      password_file: /etc/prometheus/monitor-password
+    static_configs:
+      - targets: ['backend:8080']

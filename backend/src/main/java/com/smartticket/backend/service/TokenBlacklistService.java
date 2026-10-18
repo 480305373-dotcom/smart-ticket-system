@@ -34,7 +34,20 @@ public class TokenBlacklistService {
 
   public void blacklist(String token, long ttlMillis) {
     if (redisEnabled) {
-      redis.opsForValue().set("jwt:blacklist:" + token, "1", Duration.ofMillis(ttlMillis));
+      // Persist first; Redis loss/restart must never restore a revoked token.
+      jdbc.update(
+          "INSERT INTO token_blacklist(token_hash,expires_at) VALUES (?,?) ON CONFLICT(token_hash)"
+              + " DO UPDATE SET expires_at=EXCLUDED.expires_at",
+          hash(token),
+          java.sql.Timestamp.from(java.time.Instant.now().plusMillis(ttlMillis)));
+      try {
+        redis
+            .opsForValue()
+            .set("smartticket:jwt:blacklist:" + hash(token), "1", Duration.ofMillis(ttlMillis));
+      } catch (org.springframework.dao.DataAccessException e) {
+        org.slf4j.LoggerFactory.getLogger(getClass())
+            .warn("Revocation persisted; Redis cache unavailable");
+      }
       return;
     }
     jdbc.update("DELETE FROM token_blacklist WHERE expires_at < CURRENT_TIMESTAMP");
@@ -46,7 +59,13 @@ public class TokenBlacklistService {
   }
 
   public boolean isBlacklisted(String token) {
-    if (redisEnabled) return Boolean.TRUE.equals(redis.hasKey("jwt:blacklist:" + token));
+    if (redisEnabled)
+      try {
+        if (Boolean.TRUE.equals(redis.hasKey("smartticket:jwt:blacklist:" + hash(token))))
+          return true;
+      } catch (org.springframework.dao.DataAccessException e) {
+        /* PostgreSQL remains authoritative. */
+      }
     return jdbc.queryForObject(
             "SELECT count(*) FROM token_blacklist WHERE token_hash=? AND"
                 + " expires_at>CURRENT_TIMESTAMP",

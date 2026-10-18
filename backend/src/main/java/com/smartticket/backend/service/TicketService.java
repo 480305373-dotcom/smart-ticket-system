@@ -20,6 +20,7 @@ public class TicketService {
 
   private final TicketMapper ticketMapper;
   private final TicketActivityService activities;
+  private final TicketEventPublisher events;
   private final UserDirectoryService directory;
   private final com.smartticket.backend.mapper.TicketRequestMapper requests;
   private final com.smartticket.backend.mapper.UserMapper users;
@@ -29,12 +30,14 @@ public class TicketService {
       TicketActivityService activities,
       com.smartticket.backend.mapper.UserMapper users,
       UserDirectoryService directory,
-      com.smartticket.backend.mapper.TicketRequestMapper requests) {
+      com.smartticket.backend.mapper.TicketRequestMapper requests,
+      TicketEventPublisher events) {
     this.ticketMapper = ticketMapper;
     this.activities = activities;
     this.users = users;
     this.directory = directory;
     this.requests = requests;
+    this.events = events;
   }
 
   private Ticket enrich(Ticket ticket) {
@@ -75,6 +78,7 @@ public class TicketService {
     ticket.setUpdatedAt(null);
     ticketMapper.insert(ticket);
     activities.record(ticket.getId(), ticket.getUserId(), "CREATE", null, "OPEN");
+    events.created(ticket.getUserId(), ticket.getId());
     return enrich(ticketMapper.selectById(ticket.getId()));
   }
 
@@ -270,8 +274,14 @@ public class TicketService {
     if (ticket.getStatus() == TicketStatus.CLOSED || ticket.getStatus() == TicketStatus.RESOLVED)
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "已完成的工单不能重新指派");
     if (assigneeId != null) {
-      var handler = users.selectById(assigneeId);
-      if (handler == null || !"ADMIN".equals(handler.getRole()))
+      var handler =
+          users.selectOne(
+              new LambdaQueryWrapper<com.smartticket.backend.entity.User>()
+                  .eq(com.smartticket.backend.entity.User::getId, assigneeId)
+                  .last("FOR SHARE"));
+      if (handler == null
+          || !"ADMIN".equals(handler.getRole())
+          || Boolean.FALSE.equals(handler.getEnabled()))
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "处理人必须是有效的管理员账号");
     }
     if (Objects.equals(ticket.getAssigneeId(), assigneeId)) return ticket;

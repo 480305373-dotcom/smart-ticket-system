@@ -1,8 +1,10 @@
 # 企业智能工单与知识协同平台
 
+**完整版入口：** [运行与运维指南](docs/ENTERPRISE_GUIDE.md)。新增 Redis、事务消息、运维监控、账号管理、真实 Ollama/pgvector 问答及容器部署。原有轻量 dev 模式继续可用。
+
 Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。在已有 Spring Boot 后端上增量完善，使用 PostgreSQL 保存用户、工单、沟通记录、处理历史和知识文章。普通用户提交和跟进自己的工单，管理员管理全局工单并维护知识库。
 
-**当前核心演示版本采用关键词匹配推荐，不是大模型 AI。** 原有 Redis、RabbitMQ、Ollama、pgvector 扩展代码保留；`dev` 模式只依赖 PostgreSQL，不要求这些服务。旧版扩展说明归档于 [docs/legacy-extensions.md](docs/legacy-extensions.md)，这些扩展没有纳入本次完整运行验收。
+**工单详情的知识推荐仍采用关键词匹配。** `enterprise,ai` 模式另行提供 Ollama + Embedding + pgvector 检索问答，带真实知识出处；两者界面和原理明确区分。`dev` 模式只依赖 PostgreSQL。旧版扩展文档保留作历史参考，当前配置与运行方式以 [完整版指南](docs/ENTERPRISE_GUIDE.md) 为准。
 
 ## 技术栈
 
@@ -204,6 +206,15 @@ cd frontend
 | POST | `/users/register` | 公开 | 注册普通用户 |
 | POST | `/users/login` | 公开 | 验证账号密码并返回 JWT 与身份 |
 | POST | `/users/logout` | 登录 | 撤销当前 Token |
+| POST | `/users/change-password` | 登录 | 校验原密码、更新密码并撤销全部旧会话 |
+| GET / POST | `/admin/users` | ADMIN | 用户分页、创建普通账号 |
+| PATCH | `/admin/users/{id}` | ADMIN | 角色与启用状态，立即使旧会话失效 |
+| GET | `/admin/system` | ADMIN | 服务状态、消息队列与 outbox 记录 |
+| POST | `/admin/outbox/{id}/retry` | ADMIN | 重新投递达到重试上限的失败事件 |
+| POST | `/admin/mq/replay-dead-letter` | ADMIN | 先持久化再确认的死信重放 |
+| GET | `/system/capabilities` | 登录 | 当前真实启用的模块 |
+| POST | `/ai/assist` | 登录、AI 启用 | 向量检索问答及已发布文章来源 |
+| GET / POST | `/admin/ai/index` | ADMIN、AI 启用 | 索引状态与同步 |
 | GET | `/users/{id}` | 本人 / ADMIN | 查询用户，不返回密码哈希 |
 | GET | `/users/handlers` | ADMIN | 可指派管理员列表，仅返回 id / username |
 | GET | `/tickets` | 登录 | 保留旧列表，按角色隔离 |
@@ -241,6 +252,12 @@ cd frontend
 | URL | 页面 | 权限 |
 |---|---|---|
 | `/login` | 登录 | 未登录；已登录跳转概览 |
+| `/register` | 注册普通账号；prod 默认需管理员开通 | 未登录 |
+| `/account` | 修改密码、撤销全部旧会话 | 登录 |
+| `/assistant` | AI 知识问答或未启用说明 | 登录 |
+| `/admin/system` | 服务、消息、重试与知识索引 | ADMIN |
+| `/admin/users` | 创建账号、角色与启停管理 | ADMIN |
+| `/admin/audit` | 真实操作审计分页 | ADMIN |
 | `/dashboard` | 当前身份、真实统计、状态图、最近工单 | 登录 |
 | `/tickets` | 工单分页筛选 | USER 本人 / ADMIN 全部 |
 | `/tickets/create` | 创建工单 | 登录 |
@@ -273,7 +290,7 @@ npm install
 npm run build
 ```
 
-JUnit 的 Spring 集成测试使用 `@ActiveProfiles("dev")`，真实连接配置的 PostgreSQL。普通业务测试事务回滚自己的用户/工单；并发与事务失败测试使用独立事务并清理自己的测试记录。共 20 个测试，覆盖数据隔离、生命周期、指派、重复提交、并发更新、JWT 过期及数据库故障响应等。dev 初始化是正常的幂等初始化，不清空现有业务数据。
+JUnit 集成测试真实连接配置的 PostgreSQL。普通业务测试事务回滚自己的用户/工单；并发和事务失败测试使用独立事务并清理自己的记录。当前共 32 个测试；完整验收命令为 `mvn clean package '-Dinfra.tests=true'`，开启真实 Redis/RabbitMQ 集成测试。普通 `mvn test` 跳过需要中间件的 6 个测试。覆盖数据隔离、指派、幂等、并发、JWT、账号失效、缓存、消息确认、消费回滚、死信恢复与 AI 来源安全。dev 初始化保持幂等，不清空已有业务数据。
 
 后端启动后可重复运行真实 HTTP 验证：
 
@@ -304,6 +321,6 @@ HTTP/浏览器脚本创建临时工单和文章，通过同一 API 清理自己�
 9. `LoginView` → `TicketsView` → `TicketForm` → `TicketDetail`：从表单到请求再到数据库变化串起工单流程。
 10. `DashboardView` → 知识页面：理解真实统计、分类查询、草稿和发布。最后再阅读保留的缓存/MQ/AI 扩展。
 
-当前 dev 验收不依赖 Redis/RabbitMQ/Ollama；公开部署所需的 HTTPS、私有密钥、反向代理和多实例限流配置不属于本次本机演示运行。
+dev 继续只依赖 PostgreSQL；完整版提供私有密钥生成、Nginx、Redis 跨实例限流和监控配置。真实公网域名、HTTPS 和服务器环境由实际部署提供。详细运行方式和验证边界见完整版指南。
 
 演示脚本与面试讲解材料见 [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md)。仓库中的 SQL 和 Java 初始化器可复现演示数据；真实数据库文件、本机密码、JWT 会话、依赖目录和构建产物不上传。

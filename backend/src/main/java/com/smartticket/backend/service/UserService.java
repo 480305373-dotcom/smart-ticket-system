@@ -82,6 +82,7 @@ public class UserService {
     }
 
     // 登录成功，清除之前累计的失败次数
+    if (Boolean.FALSE.equals(user.getEnabled())) throw new LoginException("账号已停用，请联系管理员");
     loginAttemptService.clearFailures(username);
 
     return user;

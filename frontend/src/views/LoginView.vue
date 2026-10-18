@@ -42,6 +42,7 @@ async function submit() {
       <span class="eyebrow">WELCOME BACK</span>
       <h2>登录工作台</h2>
       <p class="muted">使用企业账号进入服务空间</p>
+      <p><router-link to="/register">没有账号？注册普通账号</router-link></p>
       <el-alert
         v-if="error"
         :title="error"

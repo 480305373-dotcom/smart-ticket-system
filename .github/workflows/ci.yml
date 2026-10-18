@@ -1,5 +1,15 @@
 name: Verify application
 on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish the existing draft after full verification
+        type: boolean
+        default: false
+      release_tag:
+        description: Existing draft release tag
+        type: string
+        default: v1.0.0
   push:
     branches: [main, 'codex/**']
   pull_request:
@@ -65,3 +75,36 @@ jobs:
         with:
           name: deployment-verification
           path: docs/deployment-verification.json
+      - name: Package verified release
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+        run: python3 scripts/package_release.py
+      - name: Save release binaries
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-release
+          path: artifacts/smart-ticket-system-complete.zip*
+          compression-level: 0
+  release:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: complete-release
+          path: artifacts
+      - name: Upload and publish verified draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          (cd artifacts && sha256sum --check smart-ticket-system-complete.zip.sha256)
+          gh release upload "$RELEASE_TAG" artifacts/smart-ticket-system-complete.zip artifacts/smart-ticket-system-complete.zip.sha256 --clobber
+          gh release edit "$RELEASE_TAG" --target "$RELEASE_COMMIT" --draft=false --latest

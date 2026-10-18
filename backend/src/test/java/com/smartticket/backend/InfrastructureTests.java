@@ -115,14 +115,18 @@ class InfrastructureTests {
   void statisticsCacheIsJsonAndPermissionScoped() {
     assertInstanceOf(org.springframework.data.redis.cache.RedisCacheManager.class, cacheManager);
     var key = "smartticket:infra-test-cache:ticketStatistics::USER_" + owner();
-    redis.delete(key);
     try {
-      tickets.getStatistics(owner(), false);
-      String json = redis.opsForValue().get(key);
-      assertNotNull(json, "Statistics must be written to the real Redis test namespace");
-      assertTrue(json.contains("total"));
-      assertTrue(redis.getExpire(key) > 0);
-      assertEquals(0, tickets.getStatistics(owner(), false).getUserCount());
+      for (int i = 0; i < 20; i++) {
+        redis.delete(key);
+        tickets.getStatistics(owner(), false);
+        String json = redis.opsForValue().get(key);
+        assertNotNull(json, "Cache write must be visible when the method returns");
+        assertTrue(json.contains("total"));
+        assertTrue(redis.getExpire(key) > 0);
+        assertEquals(0, tickets.getStatistics(owner(), false).getUserCount());
+        cacheManager.getCache("ticketStatistics").clear();
+        assertNull(redis.opsForValue().get(key), "Cache clear must complete synchronously");
+      }
     } finally {
       redis.delete(key);
     }

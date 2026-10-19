@@ -39,7 +39,11 @@ def main():
     eventually(quorum_ready)
     record('Kubernetes quorum queue has 3 online members',True)
     # Full application checks also assert routing across both instances.
-    command('python',str(ROOT/'scripts/distributed_smoke.py'),'--http-only','--base','http://127.0.0.1:8091/api','--output','docs/kubernetes-http-verification.json')
+    workflow=command('python',str(ROOT/'scripts/distributed_smoke.py'),'--http-only','--base','http://127.0.0.1:8091/api','--output','docs/kubernetes-http-verification.json',check=False,timeout=180)
+    print(workflow.stdout,flush=True)
+    if workflow.returncode:
+        print(workflow.stderr,flush=True)
+        raise RuntimeError('Kubernetes HTTP verification failed; child diagnostic output printed above')
     record('full HTTP workflow passes through Kubernetes gateway',True)
     base='http://127.0.0.1:8091/api'
     _,session,_=request(base,'/users/login','POST',body={'username':'dev_zhangsan','password':'Demo@12345'})

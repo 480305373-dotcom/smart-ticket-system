@@ -5,6 +5,7 @@ No user database is deleted, and every stopped container is restarted in finally
 """
 import argparse
 import concurrent.futures
+import http.client
 import json
 import subprocess
 import time
@@ -44,7 +45,7 @@ def eventually(fn,timeout=90):
         try:
             value=fn()
             if value:return value
-        except (RuntimeError,urllib.error.URLError,TimeoutError):pass
+        except (RuntimeError,urllib.error.URLError,TimeoutError,ConnectionError,http.client.HTTPException):pass
         time.sleep(2)
     raise AssertionError('Readiness/failover did not complete within verification window')
 def redis(node,*args):
@@ -58,8 +59,13 @@ def main():
     base=args.base.rstrip('/')
     eventually(lambda:request(base,'/system/public-config')[0]==200,180)
     def login(name):
-        code,data,_=request(base,'/users/login','POST',body={'username':name,'password':'Demo@12345'})
-        record('login '+name,code==200)
+        # Token issuance is safe to retry during gateway/registry startup. Bad
+        # credentials and throttling are returned immediately, never retried.
+        def attempt():
+            response=request(base,'/users/login','POST',body={'username':name,'password':'Demo@12345'})
+            return response if response[0] not in (502,503,504) else False
+        code,data,_=eventually(attempt)
+        record('login '+name,code==200,status=code,message=data.get('message'))
         return data['data']['token']
     user=login('dev_zhangsan');other=login('dev_lisi');admin=login('dev_admin1')
     # Registry updates and each client's cache converge independently. Wait using reads;

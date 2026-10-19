@@ -16,7 +16,9 @@ import org.springframework.context.annotation.*;
     MyMetaObjectHandler.class, GlobalExceptionHandler.class, ServiceClientConfig.class})
 public class KnowledgeApplication {
   public static void main(String[] args) { SpringApplication.run(KnowledgeApplication.class,args); }
-  @Bean MapperFactoryBean<KnowledgeArticleMapper> articleMapper() {
-    return new MapperFactoryBean<>(KnowledgeArticleMapper.class);
+  @Bean MapperFactoryBean<KnowledgeArticleMapper> articleMapper(org.apache.ibatis.session.SqlSessionFactory factory) {
+    var mapper = new MapperFactoryBean<>(KnowledgeArticleMapper.class);
+    mapper.setSqlSessionFactory(factory);
+    return mapper;
   }
 }

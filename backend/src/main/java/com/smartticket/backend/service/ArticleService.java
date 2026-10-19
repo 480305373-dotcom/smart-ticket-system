@@ -13,6 +13,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "app.knowledge.remote", havingValue = "false", matchIfMissing = true)
 public class ArticleService {
   private final KnowledgeArticleMapper mapper;
 
@@ -77,6 +79,12 @@ public class ArticleService {
         .distinct()
         .sorted()
         .toList();
+  }
+
+  public long countVisible(boolean admin) {
+    var query = new LambdaQueryWrapper<KnowledgeArticle>();
+    if (!admin) query.eq(KnowledgeArticle::getStatus, "PUBLISHED");
+    return mapper.selectCount(query);
   }
 
   // Deterministic keyword matching: no model, embedding or invented relevance.

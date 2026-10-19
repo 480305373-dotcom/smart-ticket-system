@@ -1,4 +1,6 @@
 -- Additive migration: existing rows and tables are preserved.
+-- Serialize first boot across application replicas; IF NOT EXISTS alone can race.
+SELECT pg_advisory_lock(741852962);
 CREATE TABLE IF NOT EXISTS app_user (
  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, username VARCHAR(100) UNIQUE NOT NULL,
  password_hash VARCHAR(255) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'USER');
@@ -63,3 +65,4 @@ CREATE INDEX IF NOT EXISTS idx_operation_log_time ON operation_log(created_at DE
 CREATE TABLE IF NOT EXISTS knowledge_vector_index (
  article_id BIGINT PRIMARY KEY REFERENCES knowledge_article(id) ON DELETE CASCADE,
  fingerprint VARCHAR(64) NOT NULL, indexed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+SELECT pg_advisory_unlock(741852962);

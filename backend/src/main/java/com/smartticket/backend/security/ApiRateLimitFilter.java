@@ -18,6 +18,7 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest r) {
+    // Knowledge requests pass this limiter once through identity introspection.
     return "OPTIONS".equals(r.getMethod()) || r.getRequestURI().startsWith("/actuator/");
   }
 

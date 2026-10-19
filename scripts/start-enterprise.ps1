@@ -23,10 +23,14 @@ try {
     if(Test-Path backend-dev.pid){
         $ticketOldPid=[int](Get-Content backend-dev.pid)
         $ticketOld=Get-CimInstance Win32_Process -Filter "ProcessId=$ticketOldPid"
-        if($ticketOld -and $ticketOld.CommandLine -like '*backend-0.0.1-SNAPSHOT.jar*'){Stop-Process -Id $ticketOldPid}
+        if($ticketOld -and ($ticketOld.CommandLine -like '*backend-0.0.1-SNAPSHOT.jar*' -or $ticketOld.CommandLine -like "*$ticketRoot*.runtime*standalone*backend.jar*")){Stop-Process -Id $ticketOldPid}
     }
     $ticketProfiles=if($WithAi){'enterprise,ai'}else{'enterprise'}
-    $ticketBackend=Start-Process -FilePath (Get-Command java).Source -ArgumentList @('-jar',$ticketJar,"--spring.profiles.active=$ticketProfiles") -WorkingDirectory $ticketRoot -RedirectStandardOutput "$ticketRoot/backend-dev.log" -RedirectStandardError "$ticketRoot/backend-dev-error.log" -WindowStyle Hidden -PassThru
+    $ticketRuntimeDirectory=Join-Path $ticketRoot '.runtime/standalone'
+    New-Item -ItemType Directory -Force -Path $ticketRuntimeDirectory | Out-Null
+    $ticketRuntimeJar=Join-Path $ticketRuntimeDirectory 'backend.jar'
+    Copy-Item -LiteralPath $ticketJar -Destination $ticketRuntimeJar -Force
+    $ticketBackend=Start-Process -FilePath (Get-Command java).Source -ArgumentList @('-jar',$ticketRuntimeJar,"--spring.profiles.active=$ticketProfiles") -WorkingDirectory $ticketRoot -RedirectStandardOutput "$ticketRoot/backend-dev.log" -RedirectStandardError "$ticketRoot/backend-dev-error.log" -WindowStyle Hidden -PassThru
     Set-Content backend-dev.pid $ticketBackend.Id
     if(-not(Test-Path frontend/node_modules)){Push-Location frontend;try{& ../scripts/npm.ps1 install}finally{Pop-Location}}
     $ticketListening=Get-NetTCPConnection -State Listen -LocalPort 5173 -ErrorAction SilentlyContinue

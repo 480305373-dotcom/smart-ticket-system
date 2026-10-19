@@ -22,3 +22,5 @@ backend/config/application-local.properties
 .runtime/
 artifacts/
 backend/config/application-enterprise-local.properties
+__pycache__/
+*.pyc

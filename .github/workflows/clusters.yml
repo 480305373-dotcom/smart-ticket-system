@@ -32,6 +32,13 @@ jobs:
           npm ci
           npm test
           npm run build
+      - name: Prepare run-specific acceptance evidence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for name in ('distributed-verification.json', 'kubernetes-verification.json', 'kubernetes-http-verification.json'):
+              (Path('docs') / name).unlink(missing_ok=True)
+          PY
       - name: Start isolated 6-node Redis and 3-node RabbitMQ deployment
         shell: pwsh
         run: ./scripts/start-distributed.ps1 -SkipBuild

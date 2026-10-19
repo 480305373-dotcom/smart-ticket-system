@@ -1,0 +1,151 @@
+{
+  "result": "PASS",
+  "stoppedPrimary": "redis-1",
+  "samples": [
+    {
+      "http": 503,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 0
+    },
+    {
+      "http": 503,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 1
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "DOWN"
+      ],
+      "sampleIndex": 2
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 3
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 4
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 5
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 6
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 7
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 8
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 9
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 10
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 11
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 12
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 13
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 14
+    },
+    {
+      "http": 200,
+      "service": "core",
+      "coreStates": [
+        "UP",
+        "UP"
+      ],
+      "sampleIndex": 15
+    }
+  ],
+  "scope": "Redis primary held offline; last 10 HTTP samples succeeded before restoring it. Samples are not latency measurements."
+}

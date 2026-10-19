@@ -2,7 +2,7 @@
 
 **完整版入口：** [运行与运维指南](docs/ENTERPRISE_GUIDE.md)。新增 Redis、事务消息、运维监控、账号管理、真实 Ollama/pgvector 问答及容器部署。原有轻量 dev 模式继续可用。
 
-**分布式模式：** [微服务与集群指南](docs/DISTRIBUTED_GUIDE.md)。新增独立知识服务与数据库、Spring Cloud Gateway / Eureka、Redis 3 主 3 从、RabbitMQ 3 节点 Quorum，以及 Kubernetes 多副本部署和故障验证脚本；原单体模式和数据卷保留。实际验收范围以对应报告为准。
+**分布式模式：** [微服务与集群指南](docs/DISTRIBUTED_GUIDE.md)、[交付与验收报告](docs/DISTRIBUTED_DELIVERY.md)。新增独立知识服务与数据库、Spring Cloud Gateway / Eureka、Redis 3 主 3 从、RabbitMQ 3 节点 Quorum，以及 Kubernetes 多副本部署和故障验证脚本；原单体模式和数据卷保留。
 
 Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。在已有 Spring Boot 后端上增量完善，使用 PostgreSQL 保存用户、工单、沟通记录、处理历史和知识文章。普通用户提交和跟进自己的工单，管理员管理全局工单并维护知识库。
 

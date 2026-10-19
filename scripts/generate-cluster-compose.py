@@ -52,7 +52,7 @@ services['backend']={'image':'smartticket/backend:local','build':{'context':'.',
     'depends_on':{'knowledge':{'condition':'service_healthy'},'redis-init':{'condition':'service_completed_successfully'},**{f'rabbit-{i}':{'condition':'service_healthy'} for i in range(3)}},
     'healthcheck':health,'mem_limit':'768m','stop_grace_period':'40s'}
 services['gateway']={'image':'smartticket/gateway:local','build':{'context':'.','dockerfile':'docker/distributed/Service.Dockerfile','args':{'MODULE':'gateway'}},
-    'environment':common,'depends_on':{'backend':{'condition':'service_healthy'}},'healthcheck':health,'mem_limit':'384m'}
+    'environment':{k:v for k,v in common.items() if k!='INTERNAL_SERVICE_KEY'},'depends_on':{'backend':{'condition':'service_healthy'}},'healthcheck':health,'mem_limit':'384m'}
 services['frontend']={'image':'smartticket/frontend:local','build':{'context':'.','dockerfile':'frontend/Dockerfile','target':'prebuilt'},
     'volumes':['./docker/distributed/nginx.conf:/etc/nginx/conf.d/default.conf:ro'],'ports':['127.0.0.1:8090:80'],
     'depends_on':{'gateway':{'condition':'service_healthy'}},'mem_limit':'64m'}

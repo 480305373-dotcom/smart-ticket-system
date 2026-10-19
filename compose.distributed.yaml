@@ -418,7 +418,6 @@
       },
       "environment": {
         "EUREKA_URL": "http://registry:8080/eureka/",
-        "INTERNAL_SERVICE_KEY": "${INTERNAL_SERVICE_KEY:?required}",
         "TZ": "Asia/Shanghai",
         "JAVA_TOOL_OPTIONS": "-Duser.timezone=Asia/Shanghai -XX:ActiveProcessorCount=2"
       },

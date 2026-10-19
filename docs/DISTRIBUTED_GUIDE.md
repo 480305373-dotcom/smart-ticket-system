@@ -82,7 +82,7 @@ RabbitMQ：3 节点，审计主队列与死信队列均采用 3 副本 Quorum
 
 ## 7. 本地 Compose 运行
 
-需要 Java 21、Node、Maven、Docker Desktop。完整拓扑包含多个 Java 实例和中间件，Docker 至少准备约 8 GiB 内存；同时保留多套演示环境时需额外余量。
+需要 Java 21、Node、Maven、Python 3、PowerShell 和 Docker Desktop。完整拓扑包含多个 Java 实例和中间件，Docker 至少准备约 8 GiB 内存；同时保留多套演示环境时需额外余量。
 
 ```powershell
 # 编译并启动，自动产生仅本机保存的随机凭据
@@ -91,11 +91,16 @@ RabbitMQ：3 节点，审计主队列与死信队列均采用 3 副本 Quorum
 # 已构建过时重用构建结果
 .\scripts\start-distributed.ps1 -SkipBuild
 
+# 镜像已就绪时不再访问基础镜像仓库
+.\scripts\start-distributed.ps1 -SkipBuild -SkipImageBuild
+
 # 实际业务、权限、数据库边界与故障验证
 python scripts/distributed_smoke.py --faults
 ```
 
 入口 `http://127.0.0.1:8090`，注册中心 `http://127.0.0.1:8501`。演示用户 dev_zhangsan、dev_lisi，管理员 dev_admin1，演示密码 Demo@12345。此默认模式会初始化模拟企业数据，不作为直接暴露互联网的正式部署配置。
+
+保留并备份 `.runtime/distributed.env`。已有卷而凭据丢失时，脚本会停止，要求恢复原凭据；不会重新生成密码、删除卷或重置数据。
 
 脚本使用独立 Compose 项目。停止时保留数据卷：
 
@@ -153,6 +158,8 @@ mvn -B package '-Dinfra.tests=true'
 `.github/workflows/clusters.yml` 在独立 Linux runner 执行 Compose 业务与节点故障验证，再停止其容器以释放内存，在真实 kind 集群部署同一组镜像，验证资源和自愈。原 CI 的单体、正式部署和监控验收继续保留。
 
 运行结果分别写 `docs/distributed-verification.json`、`docs/kubernetes-http-verification.json` 与 `docs/kubernetes-verification.json`；失败细节仅写本地 `.runtime` 中指定的脱敏报告。**只有对应报告实际为 PASS，才可把该环境列为已经验收。**
+
+本轮完成情况及本机/云端证据见 [分布式交付报告](DISTRIBUTED_DELIVERY.md)。节点选主和客户端拓扑刷新可能短暂返回 503；验收会在原节点仍停机时继续采样，并等待节点与幂等写入完全恢复，再注入下一种故障。没有把连续故障交叠造成的恢复窗口伪装成即时无中断。
 
 ## 10. 面试时可准确介绍的变化
 

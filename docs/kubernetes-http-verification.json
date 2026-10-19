@@ -1,0 +1,116 @@
+{
+  "result": "PASS",
+  "timestamp": "2026-10-19 14:15:01",
+  "base": "http://127.0.0.1:8091/api",
+  "checks": [
+    {
+      "name": "login dev_zhangsan",
+      "passed": true
+    },
+    {
+      "name": "login dev_lisi",
+      "passed": true
+    },
+    {
+      "name": "login dev_admin1",
+      "passed": true
+    },
+    {
+      "name": "core traffic uses multiple registered instances",
+      "passed": true,
+      "instances": [
+        "backend-76fd5c68bc-qh7w4",
+        "backend-76fd5c68bc-z2d9s"
+      ]
+    },
+    {
+      "name": "knowledge traffic uses multiple registered instances",
+      "passed": true,
+      "instances": [
+        "knowledge-c47558d9-89p7c",
+        "knowledge-c47558d9-wm2gt"
+      ]
+    },
+    {
+      "name": "internal identity is not exposed by gateway",
+      "passed": true
+    },
+    {
+      "name": "internal knowledge is not exposed by gateway",
+      "passed": true
+    },
+    {
+      "name": "ordinary user cannot manage accounts",
+      "passed": true
+    },
+    {
+      "name": "forged identity headers do not authenticate",
+      "passed": true
+    },
+    {
+      "name": "cross-instance concurrent create is idempotent",
+      "passed": true
+    },
+    {
+      "name": "cross-user resource access remains forbidden",
+      "passed": true,
+      "ticketId": 26
+    },
+    {
+      "name": "same key with different payload rejected",
+      "passed": true
+    },
+    {
+      "name": "state transition IN_PROGRESS",
+      "passed": true
+    },
+    {
+      "name": "state transition CLOSED",
+      "passed": true
+    },
+    {
+      "name": "transactional history has creation and both transitions",
+      "passed": true
+    },
+    {
+      "name": "knowledge write routed to independent service",
+      "passed": true,
+      "status": 200,
+      "service": "knowledge",
+      "message": "success"
+    },
+    {
+      "name": "draft is hidden from user",
+      "passed": true
+    },
+    {
+      "name": "publish independent article",
+      "passed": true
+    },
+    {
+      "name": "published article is readable by user",
+      "passed": true
+    },
+    {
+      "name": "ordinary user cannot write knowledge",
+      "passed": true
+    },
+    {
+      "name": "statistics and remote knowledge count available",
+      "passed": true
+    },
+    {
+      "name": "core obtains recommendations over service boundary",
+      "passed": true
+    },
+    {
+      "name": "temporary article cleanup",
+      "passed": true
+    }
+  ],
+  "faultsRequested": false,
+  "note": "Local isolated deployment; does not establish cross-host availability or production capacity.",
+  "environment": "GitHub Actions, three-node kind on one runner",
+  "sourceCommit": "e27a372e66bf345cf59cd6129776a5d10470690e",
+  "workflowUrl": "https://github.com/480305373-dotcom/smart-ticket-system/actions/runs/39266307679"
+}

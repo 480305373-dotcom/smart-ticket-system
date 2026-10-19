@@ -63,7 +63,7 @@ def main():
         return data['data']['token']
     user=login('dev_zhangsan');other=login('dev_lisi');admin=login('dev_admin1')
     # Registry updates and each client's cache converge independently. Wait using reads;
-    # never retry a write that may already have committed in another service.
+    # never retry an unprotected write that may already have committed elsewhere.
     for service,path in [('core','/tickets/statistics'),('knowledge','/knowledge')]:
         hosts=set()
         def observe():
@@ -135,6 +135,13 @@ def main():
                 eventually(lambda:all(request(base,'/knowledge',token=user)[0]==200 for _ in range(5)))
                 record('service discovery removes stopped knowledge instance',all(request(base,'/knowledge',token=user)[0]==200 for _ in range(5)))
             finally:command('docker','start',victim)
+            recovered_knowledge=set()
+            def knowledge_rejoined():
+                code,_,headers=request(base,'/knowledge',token=user)
+                if code==200:recovered_knowledge.add(headers.get('x-smartticket-instance'))
+                return len(recovered_knowledge-{None})==2
+            eventually(knowledge_rejoined)
+            record('both knowledge instances rejoin before next fault',True)
             primary=next(n for n in nodes if n.split()[0]==redis('redis-0','cluster','myid')) if 'master' in next(n for n in nodes if 'myself' in n).split()[2] else next(n for n in nodes if 'master' in n.split()[2])
             primary_name=primary.split()[1].split(',')[-1]
             if primary_name not in [f'redis-{i}' for i in range(6)]:
@@ -150,14 +157,36 @@ def main():
                 eventually(promoted)
                 eventually(lambda:request(base,'/tickets/statistics',token=user)[0]==200)
                 record('Redis primary loss promotes replica and application recovers',True,stopped=primary_name)
+                # Continue reading while the original primary remains stopped.
+                sustained=[]
+                for _ in range(6):
+                    time.sleep(2)
+                    sustained.append(request(base,'/tickets/statistics',token=user)[0])
+                record('application remains available after Redis promotion',all(code==200 for code in sustained),statuses=sustained)
             finally:compose('start',primary_name)
+            def redis_rejoined():
+                view=redis(survivor,'cluster','nodes').splitlines()
+                return (len(view)==6 and all('fail' not in n.split()[2] and n.split()[7]=='connected' for n in view)
+                        and all(redis('redis-'+str(i),'ping')=='PONG' for i in range(6)))
+            eventually(redis_rejoined)
+            # Validate cache invalidation connections, not just a cached read. A stable
+            # idempotency key also handles a response lost after the database committed.
+            recovery_key=uuid.uuid4().hex
+            recovery_payload={**body,'title':'Redis恢复验收 '+tag}
+            recovery_attempts=[]
+            def recovery_write():
+                code,data,_=request(base,'/tickets','POST',user,recovery_payload,{'X-Request-Id':recovery_key})
+                recovery_attempts.append(code)
+                return code==200 and data.get('data',{}).get('id')
+            recovered_ticket=eventually(recovery_write)
+            record('Redis fully rejoins and idempotent writes recover before next fault',True,ticketId=recovered_ticket,attempts=len(recovery_attempts))
             leader=audit['leader'].split('@')[-1]
             if leader not in [f'rabbit-{i}' for i in range(3)]:raise AssertionError('Unexpected Rabbit leader identity')
             try:
                 compose('stop',leader)
                 new_body={**body,'title':'RabbitMQ故障恢复 '+tag}
-                code,new,_=request(base,'/tickets','POST',user,new_body,{'X-Request-Id':uuid.uuid4().hex})
-                record('ticket creation remains available with one Rabbit node stopped',code==200)
+                code,new,response_headers=request(base,'/tickets','POST',user,new_body,{'X-Request-Id':uuid.uuid4().hex})
+                record('ticket creation remains available with one Rabbit node stopped',code==200,status=code,service=response_headers.get('x-smartticket-service'),message=new.get('message'))
                 new_id=new['data']['id']
                 def consumed():
                     code,data,_=request(base,'/operation-logs?size=100',token=admin)
@@ -165,6 +194,11 @@ def main():
                 eventually(consumed)
                 record('quorum queue still delivers after leader loss',True,ticketId=new_id,stopped=leader)
             finally:compose('start',leader)
+            def rabbit_rejoined():
+                result=json.loads(compose('exec','-T',leader,'rabbitmqctl','list_queues','name','online','--formatter=json').stdout)
+                return any(q['name']=='smartticket.ticket.audit.queue' and len(q['online'])==3 for q in result)
+            eventually(rabbit_rejoined)
+            record('Rabbit quorum restores all 3 online replicas',True)
     report={'result':'PASS','timestamp':time.strftime('%Y-%m-%d %H:%M:%S'),'base':base,'checks':checks,'faultsRequested':args.faults,'note':'Local isolated deployment; does not establish cross-host availability or production capacity.'}
     output=ROOT/args.output;output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(f'{len(checks)} checks passed. Report: {output.relative_to(ROOT)}')

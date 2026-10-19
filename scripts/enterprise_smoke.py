@@ -33,8 +33,9 @@ def main():
         assert answer['answer'].strip() and answer['sources']
         assert len(answer['answer'])<2500
         root=Path(__file__).resolve().parents[1]
-        (root/'docs/ai-verification.json').write_text(json.dumps({'result':'PASS',**answer},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        Path(os.environ.get('SMART_TICKET_AI_REPORT',str(root/'docs/ai-verification.json'))).write_text(json.dumps({'result':'PASS',**answer},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         result['ai']={'result':'PASS','sources':len(answer['sources'])}
-    (Path(__file__).resolve().parents[1]/'docs/enterprise-verification.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    result['base']=BASE
+    Path(os.environ.get('SMART_TICKET_REPORT',str(Path(__file__).resolve().parents[1]/'docs/enterprise-verification.json'))).write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(f'PASS: {len(checks)} enterprise HTTP checks; real dependency health and model answer verified.')
 if __name__=='__main__':main()

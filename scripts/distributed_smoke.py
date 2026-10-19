@@ -34,7 +34,9 @@ def request(base,path,method='GET',token=None,body=None,headers=None):
         return e.code,payload,{k.lower():v for k,v in e.headers.items()}
 def record(name,passed,**details):
     checks.append({'name':name,'passed':bool(passed),**details})
-    if not passed:raise AssertionError(name)
+    if not passed:
+        print('FAIL: '+name+' '+json.dumps(details,ensure_ascii=False),flush=True)
+        raise AssertionError(name)
     print('PASS: '+name,flush=True)
 def eventually(fn,timeout=90):
     deadline=time.monotonic()+timeout
@@ -60,6 +62,17 @@ def main():
         record('login '+name,code==200)
         return data['data']['token']
     user=login('dev_zhangsan');other=login('dev_lisi');admin=login('dev_admin1')
+    # Registry updates and each client's cache converge independently. Wait using reads;
+    # never retry a write that may already have committed in another service.
+    for service,path in [('core','/tickets/statistics'),('knowledge','/knowledge')]:
+        hosts=set()
+        def observe():
+            code,_,headers=request(base,path,token=user)
+            if code==200 and headers.get('x-smartticket-instance'):
+                hosts.add(headers['x-smartticket-instance'])
+            return len(hosts)>=2
+        eventually(observe)
+        record(service+' traffic uses multiple registered instances',True,instances=sorted(hosts))
     record('internal identity is not exposed by gateway',request(base,'/internal/identity',token=admin)[0]==404)
     record('internal knowledge is not exposed by gateway',request(base,'/internal/knowledge/count','POST',admin,{'admin':True})[0]==404)
     code,_,_=request(base,'/admin/users',token=user)
@@ -83,7 +96,7 @@ def main():
     record('transactional history has creation and both transitions',code==200 and len(data['data'])==3)
     article={'title':'知识服务验收 '+tag,'summary':'独立数据库测试','content':'仅用于自动验收，演示发布状态和服务拆分。','category':'验收','keywords':'验证,工单','status':'DRAFT'}
     code,data,headers=request(base,'/knowledge','POST',admin,article)
-    record('knowledge write routed to independent service',code==200 and headers.get('x-smartticket-service')=='knowledge')
+    record('knowledge write routed to independent service',code==200 and headers.get('x-smartticket-service')=='knowledge',status=code,service=headers.get('x-smartticket-service'),message=data.get('message'))
     article_id=data['data']['id']
     record('draft is hidden from user',request(base,f'/knowledge/{article_id}',token=user)[0]==404)
     record('publish independent article',request(base,f'/knowledge/{article_id}','PUT',admin,{**article,'status':'PUBLISHED'})[0]==200)
@@ -93,12 +106,6 @@ def main():
     record('statistics and remote knowledge count available',code==200 and data['data']['articleCount']>=1)
     code,data,_=request(base,f'/tickets/{ticket}/knowledge-recommendations',token=user)
     record('core obtains recommendations over service boundary',code==200 and isinstance(data['data'],list))
-    for service,path in [('core','/tickets/statistics'),('knowledge','/knowledge')]:
-        hosts=set()
-        for _ in range(8):
-            code,_,h=request(base,path,token=user)
-            if code==200:hosts.add(h.get('x-smartticket-instance'))
-        record(service+' traffic uses multiple registered instances',len(hosts)>=2,instances=sorted(str(x) for x in hosts))
     record('temporary article cleanup',request(base,f'/knowledge/{article_id}','DELETE',admin)[0]==200)
     if not args.http_only:
         info=redis('redis-0','cluster','info')

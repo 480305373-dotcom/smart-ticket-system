@@ -1,0 +1,27 @@
+{
+  "result": "PASS",
+  "checks": [
+    "/users/login => 200",
+    "/users/login => 200",
+    "/actuator/health/readiness => 200",
+    "/admin/system => 403",
+    "/admin/users => 403",
+    "/admin/ai/index => 403",
+    "/operation-logs => 403",
+    "/admin/system => 200",
+    "/admin/users => 200",
+    "/system/capabilities => 200",
+    "/admin/ai/index => 200",
+    "/ai/assist => 200"
+  ],
+  "services": {
+    "postgres": "UP",
+    "redis": "UP",
+    "rabbitmq": "UP"
+  },
+  "ai": {
+    "result": "PASS",
+    "sources": 5
+  },
+  "base": "http://127.0.0.1:8090/api"
+}

@@ -1,0 +1,86 @@
+name: Verify distributed architecture
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  clusters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build service images and frontend
+        run: |
+          mvn -B package -DskipTests
+          cd frontend
+          npm ci
+          npm test
+          npm run build
+      - name: Prepare run-specific acceptance evidence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for name in ('distributed-verification.json', 'distributed-restart-verification.json', 'kubernetes-verification.json', 'kubernetes-http-verification.json'):
+              (Path('docs') / name).unlink(missing_ok=True)
+          PY
+      - name: Start isolated 6-node Redis and 3-node RabbitMQ deployment
+        shell: pwsh
+        run: ./scripts/start-distributed.ps1 -SkipBuild
+      - name: Verify persisted restart and refreshed Redis peer addresses
+        run: python scripts/distributed_restart_smoke.py --output docs/distributed-restart-verification.json
+      - name: Verify discovery, ownership and real failover
+        run: python scripts/distributed_smoke.py --faults
+      - name: Release application memory before Kubernetes verification
+        run: docker compose -p smartticket-cluster --env-file .runtime/distributed.env -f compose.distributed.yaml stop
+      - name: Install checksum-verified kind
+        run: |
+          mkdir -p .runtime/tools
+          curl -fsSL --retry 3 -o .runtime/tools/kind https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64
+          curl -fsSL --retry 3 -o .runtime/tools/kind.sha256sum https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64.sha256sum
+          (cd .runtime/tools && sed 's/kind-linux-amd64$/kind/' kind.sha256sum | sha256sum --check)
+          chmod +x .runtime/tools/kind
+      - name: Deploy three-node Kubernetes cluster
+        shell: pwsh
+        run: ./scripts/deploy-kubernetes.ps1 -KindPath .runtime/tools/kind
+      - name: Verify Kubernetes resources and self healing
+        run: python scripts/kubernetes_smoke.py
+      - name: Diagnostics
+        if: failure()
+        run: |
+          docker compose -p smartticket-cluster --env-file .runtime/distributed.env -f compose.distributed.yaml ps
+          docker compose -p smartticket-cluster --env-file .runtime/distributed.env -f compose.distributed.yaml logs --tail=60 backend knowledge registry gateway
+          if test -f .runtime/kubeconfig; then
+            kubectl --kubeconfig .runtime/kubeconfig -n smartticket get pods,pvc,events
+            for app in knowledge backend gateway; do
+              kubectl --kubeconfig .runtime/kubeconfig -n smartticket logs -l app=$app --all-containers --tail=80 --prefix=true || true
+            done
+          fi
+      - name: Save verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cluster-verification
+          include-hidden-files: true
+          path: |
+            docs/distributed-verification*.json
+            docs/distributed-restart-verification.json
+            docs/kubernetes-verification*.json
+            docs/kubernetes-http-verification.json
+            .runtime/distributed-verification-failure.json
+            .runtime/kubernetes-verification-failure.json

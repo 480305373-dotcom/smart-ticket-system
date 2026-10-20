@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMqConfig {
+  @org.springframework.beans.factory.annotation.Value("${app.mq.queue-type:classic}")
+  private String queueType;
 
   public static final String TICKET_EXCHANGE = "smartticket.ticket.exchange";
 
@@ -38,7 +40,12 @@ public class RabbitMqConfig {
 
   @Bean
   public Queue ticketAuditQueue() {
-    return QueueBuilder.durable(TICKET_AUDIT_QUEUE)
+    var builder = QueueBuilder.durable(TICKET_AUDIT_QUEUE);
+    if ("quorum".equals(queueType)) builder.quorum()
+        .withArgument("x-quorum-initial-group-size", 3)
+        .withArgument("x-dead-letter-strategy", "at-least-once")
+        .withArgument("x-overflow", "reject-publish");
+    return builder
         .deadLetterExchange(TICKET_DLX)
         .deadLetterRoutingKey(TICKET_DEAD_ROUTING_KEY)
         .build();
@@ -46,7 +53,9 @@ public class RabbitMqConfig {
 
   @Bean
   public Queue ticketAuditDeadLetterQueue() {
-    return QueueBuilder.durable(TICKET_AUDIT_DLQ).build();
+    var builder = QueueBuilder.durable(TICKET_AUDIT_DLQ);
+    if ("quorum".equals(queueType)) builder.quorum().withArgument("x-quorum-initial-group-size", 3);
+    return builder.build();
   }
 
   @Bean

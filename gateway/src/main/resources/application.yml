@@ -1,0 +1,66 @@
+server:
+  port: 8080
+  shutdown: graceful
+spring:
+  application:
+    name: smartticket-gateway
+  cloud:
+    loadbalancer:
+      cache:
+        ttl: 2s
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 3000
+            response-timeout: 180s
+          default-filters:
+            - RemoveRequestHeader=X-Service-Key
+            - RemoveRequestHeader=X-User-Id
+            - RemoveRequestHeader=X-User-Role
+          routes:
+            - id: knowledge
+              uri: lb://smartticket-knowledge
+              predicates:
+                - Path=/api/knowledge,/api/knowledge/**
+              filters:
+                - StripPrefix=1
+            - id: core
+              uri: lb://smartticket-core
+              predicates:
+                - Path=/api/users/**,/api/tickets,/api/tickets/**,/api/ai/**,/api/system/**,/api/admin/**,/api/operation-logs,/api/actuator/health,/api/actuator/health/readiness,/api/actuator/health/liveness
+              filters:
+                - StripPrefix=1
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://registry:8080/eureka/}
+    registry-fetch-interval-seconds: 5
+    initial-instance-info-replication-interval-seconds: 5
+    instance-info-replication-interval-seconds: 5
+    restclient:
+      timeout:
+        connect-timeout: 3000
+        socket-timeout: 5000
+    healthcheck:
+      enabled: true
+  instance:
+    prefer-ip-address: true
+    initial-status: STARTING
+    instance-id: ${spring.application.name}:${HOSTNAME:${random.uuid}}
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
+    health-check-url-path: /actuator/health/readiness
+    status-page-url-path: /actuator/health
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState

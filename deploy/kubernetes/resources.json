@@ -1,0 +1,1593 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "smartticket"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "name": "cluster-config",
+        "namespace": "smartticket"
+      },
+      "data": {
+        "postgres-init.sh": "#!/bin/sh\nset -eu\npsql -v ON_ERROR_STOP=1 --username \"$POSTGRES_USER\" --dbname postgres \\\n  --set=core_password=\"$CORE_DB_PASSWORD\" --set=knowledge_password=\"$KNOWLEDGE_DB_PASSWORD\" <<'SQL'\nCREATE ROLE core LOGIN PASSWORD :'core_password';\nCREATE ROLE knowledge LOGIN PASSWORD :'knowledge_password';\nCREATE DATABASE intelligent_ticket OWNER core;\nCREATE DATABASE smartticket_knowledge OWNER knowledge;\nREVOKE CONNECT ON DATABASE intelligent_ticket FROM PUBLIC;\nREVOKE CONNECT ON DATABASE smartticket_knowledge FROM PUBLIC;\nGRANT CONNECT ON DATABASE intelligent_ticket TO core;\nGRANT CONNECT ON DATABASE smartticket_knowledge TO knowledge;\nSQL\npsql -v ON_ERROR_STOP=1 --username \"$POSTGRES_USER\" --dbname intelligent_ticket -c 'CREATE EXTENSION IF NOT EXISTS vector;'\n",
+        "redis-start.sh": "#!/bin/sh\nset -eu\nnode_ip=$(hostname -i | awk '{print $1}')\nif [ -s /data/nodes.conf ]; then\n  # Resolve persisted peer hostnames before opening the cluster bus. Reused old\n  # IPs can otherwise connect to a different peer during a simultaneous restart.\n  umask 077\n  : > /data/peer-addresses.tmp\n  peers=$(awk 'length($1)==40 && NF>=8 {split($2,a,\",\"); if(a[2]==\"\")exit 1; print a[2]}' /data/nodes.conf | sort -u)\n  test -n \"$peers\"\n  for peer in $peers; do\n    peer_ip=\"\"\n    for attempt in $(seq 1 90); do\n      peer_ip=$(getent hosts \"$peer\" | awk '$1 ~ /^[0-9]+\\./ {print $1; exit}')\n      if [ -n \"$peer_ip\" ]; then break; fi\n      sleep 1\n    done\n    test -n \"$peer_ip\"\n    printf '%s %s\\n' \"$peer\" \"$peer_ip\" >> /data/peer-addresses.tmp\n  done\n  # Only replace address field 2; retain IDs, roles, epochs, shard metadata and slots.\n  awk 'NR==FNR {ip[$1]=$2; next} length($1)==40 && NF>=8 {split($2,a,\",\"); if(!(a[2] in ip))exit 1; sub(/^[^,]*/,ip[a[2]]\":6379@16379\",$2); gsub(/,noaddr/,\"\",$3); gsub(/^noaddr,/,\"\",$3)} {print}' \\\n    /data/peer-addresses.tmp /data/nodes.conf > /data/nodes.address-update.tmp\n  cp /data/nodes.conf /data/nodes.before-address-update.conf\n  mv /data/nodes.address-update.tmp /data/nodes.conf\n  rm /data/peer-addresses.tmp\nfi\nexec redis-server --appendonly yes --cluster-enabled yes --cluster-config-file /data/nodes.conf \\\n  --cluster-node-timeout 5000 --cluster-announce-ip \"$node_ip\" --cluster-announce-hostname \"$NODE_NAME\" \\\n  --cluster-preferred-endpoint-type hostname --requirepass \"$REDIS_PASSWORD\" \\\n  --masterauth \"$REDIS_PASSWORD\" --maxmemory 96mb --maxmemory-policy noeviction\n",
+        "redis-init.sh": "#!/bin/sh\nset -eu\nexport REDISCLI_AUTH=\"$REDIS_PASSWORD\"\nhosts=\"\"\nfor i in 0 1 2 3 4 5; do\n  host=\"redis-$i${REDIS_DNS_SUFFIX:-}\"\n  until redis-cli -h \"$host\" ping | grep -q PONG; do sleep 2; done\n  hosts=\"$hosts $host:6379\"\ndone\nfirst=\"redis-0${REDIS_DNS_SUFFIX:-}\"\nif redis-cli -h \"$first\" cluster info | grep -q 'cluster_slots_assigned:0'; then\n  # Only create a fresh isolated node. Never reset a partially initialized cluster.\n  if ! redis-cli -h \"$first\" cluster info | grep -q 'cluster_known_nodes:1'; then\n    echo 'Existing incomplete cluster requires operator inspection; refusing to reset data.' >&2\n    exit 1\n  fi\n  redis-cli --cluster create $hosts --cluster-replicas 1 --cluster-yes\nelse\n  # Persisted nodes.conf contains old IPs after containers/Pods are recreated.\n  # MEET refreshes peer addresses without deleting keys, IDs, roles or slot ownership.\n  for source in $hosts; do\n    source_host=${source%:6379}\n    for target in $hosts; do\n      target_host=${target%:6379}\n      if [ \"$source_host\" = \"$target_host\" ]; then continue; fi\n      peer_ip=$(getent hosts \"$target_host\" | awk 'NR==1 {print $1}')\n      test -n \"$peer_ip\"\n      redis-cli -h \"$source_host\" cluster meet \"$peer_ip\" 6379\n    done\n  done\nfi\n\nfor attempt in $(seq 1 90); do\n  ready=true\n  topology=\"\"\n  for address in $hosts; do\n    host=${address%:6379}\n    if ! redis-cli -h \"$host\" cluster info | grep -q 'cluster_state:ok'; then ready=false; fi\n    replication=$(redis-cli -h \"$host\" info replication)\n    if printf '%s' \"$replication\" | grep -q '^role:slave'; then\n      if ! printf '%s' \"$replication\" | grep -q '^master_link_status:up'; then ready=false; fi\n    elif ! printf '%s' \"$replication\" | grep -Eq '^connected_slaves:[1-9]'; then ready=false\n    fi\n    # A connected replica is not enough: every node must agree on each primary's\n    # epoch and slots before an automatic election can safely obtain votes.\n    view=$(redis-cli -h \"$host\" cluster nodes | awk '$3 ~ /master/ {printf \"%s %s \",$1,$7; for(i=9;i<=NF;i++)printf \"%s \",$i; print \"\"}' | sort)\n    if [ -z \"$topology\" ]; then topology=$view\n    elif [ \"$topology\" != \"$view\" ]; then ready=false\n    fi\n  done\n  if [ \"$ready\" = true ]; then echo 'Redis slots and every replication link are ready'; exit 0; fi\n  sleep 2\ndone\necho 'Existing cluster did not recover; data and topology were preserved for inspection.' >&2\nexit 1\n",
+        "default.conf": "server {\n    listen 80;\n    root /usr/share/nginx/html;\n    server_tokens off;\n    client_max_body_size 1m;\n    add_header X-Content-Type-Options nosniff always;\n    add_header X-Frame-Options DENY always;\n    location = /health { return 200 'ok'; }\n    location /api/ {\n        proxy_pass http://gateway:8080;\n        proxy_set_header Host $host;\n        proxy_set_header X-Forwarded-For $remote_addr;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        proxy_read_timeout 180s;\n    }\n    location / { try_files $uri $uri/ /index.html; }\n}\n",
+        "rabbitmq.conf": "listeners.tcp.default = 5672\ncluster_formation.peer_discovery_backend = classic_config\ncluster_formation.classic_config.nodes.1 = rabbit@rabbit-0.rabbit-nodes.smartticket.svc.cluster.local\ncluster_formation.classic_config.nodes.2 = rabbit@rabbit-1.rabbit-nodes.smartticket.svc.cluster.local\ncluster_formation.classic_config.nodes.3 = rabbit@rabbit-2.rabbit-nodes.smartticket.svc.cluster.local\ncluster_partition_handling = pause_minority\nqueue_leader_locator = balanced\nvm_memory_high_watermark.absolute = 256MiB\ndisk_free_limit.absolute = 128MB\nquorum_queue.continuous_membership_reconciliation.enabled = true\nquorum_queue.continuous_membership_reconciliation.target_group_size = 3\nquorum_queue.continuous_membership_reconciliation.interval = 10000\nquorum_queue.continuous_membership_reconciliation.auto_remove = false\n"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "postgres",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "postgres"
+        },
+        "ports": [
+          {
+            "name": "postgres",
+            "port": 5432,
+            "targetPort": 5432
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "StatefulSet",
+      "metadata": {
+        "name": "postgres",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "serviceName": "postgres",
+        "replicas": 1,
+        "podManagementPolicy": "Parallel",
+        "selector": {
+          "matchLabels": {
+            "app": "postgres"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "postgres"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "containers": [
+              {
+                "name": "postgres",
+                "image": "pgvector/pgvector:pg18",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "512Mi"
+                  }
+                },
+                "env": [
+                  {
+                    "name": "POSTGRES_USER",
+                    "value": "cluster_admin"
+                  },
+                  {
+                    "name": "POSTGRES_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "POSTGRES_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "CORE_DB_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "CORE_DB_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "KNOWLEDGE_DB_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "KNOWLEDGE_DB_PASSWORD"
+                      }
+                    }
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 5432
+                  }
+                ],
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-ec",
+                      "pg_isready -U cluster_admin -d postgres"
+                    ]
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 12
+                },
+                "volumeMounts": [
+                  {
+                    "name": "data",
+                    "mountPath": "/var/lib/postgresql"
+                  },
+                  {
+                    "name": "config",
+                    "mountPath": "/docker-entrypoint-initdb.d/init.sh",
+                    "subPath": "postgres-init.sh",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "config",
+                "configMap": {
+                  "name": "cluster-config",
+                  "defaultMode": 365
+                }
+              }
+            ],
+            "terminationGracePeriodSeconds": 40
+          }
+        },
+        "volumeClaimTemplates": [
+          {
+            "metadata": {
+              "name": "data"
+            },
+            "spec": {
+              "accessModes": [
+                "ReadWriteOnce"
+              ],
+              "resources": {
+                "requests": {
+                  "storage": "1Gi"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "redis-nodes",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "redis"
+        },
+        "ports": [
+          {
+            "name": "redis",
+            "port": 6379,
+            "targetPort": 6379
+          },
+          {
+            "name": "bus",
+            "port": 16379,
+            "targetPort": 16379
+          }
+        ],
+        "clusterIP": "None",
+        "publishNotReadyAddresses": true
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "StatefulSet",
+      "metadata": {
+        "name": "redis",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "serviceName": "redis-nodes",
+        "replicas": 6,
+        "podManagementPolicy": "Parallel",
+        "selector": {
+          "matchLabels": {
+            "app": "redis"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "redis"
+            },
+            "annotations": {
+              "smartticket.io/config-sha256": "f858590934bb263bd5d6b69f96fd7c15dccf91a73e449059d605902ac89e3923"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "containers": [
+              {
+                "name": "redis",
+                "image": "redis:7-alpine",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "50m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "160Mi"
+                  }
+                },
+                "env": [
+                  {
+                    "name": "REDIS_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "REDIS_PASSWORD"
+                      }
+                    }
+                  }
+                ],
+                "command": [
+                  "sh",
+                  "-ec",
+                  "export NODE_NAME=\"$HOSTNAME.redis-nodes\"; exec sh /opt/redis-start.sh"
+                ],
+                "ports": [
+                  {
+                    "containerPort": 6379
+                  },
+                  {
+                    "containerPort": 16379
+                  }
+                ],
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-ec",
+                      "REDISCLI_AUTH=\"$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"
+                    ]
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 12
+                },
+                "volumeMounts": [
+                  {
+                    "name": "data",
+                    "mountPath": "/data"
+                  },
+                  {
+                    "name": "config",
+                    "mountPath": "/opt/redis-start.sh",
+                    "subPath": "redis-start.sh",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "config",
+                "configMap": {
+                  "name": "cluster-config",
+                  "defaultMode": 365
+                }
+              }
+            ],
+            "terminationGracePeriodSeconds": 40,
+            "topologySpreadConstraints": [
+              {
+                "maxSkew": 1,
+                "topologyKey": "kubernetes.io/hostname",
+                "whenUnsatisfiable": "ScheduleAnyway",
+                "labelSelector": {
+                  "matchLabels": {
+                    "app": "redis"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "volumeClaimTemplates": [
+          {
+            "metadata": {
+              "name": "data"
+            },
+            "spec": {
+              "accessModes": [
+                "ReadWriteOnce"
+              ],
+              "resources": {
+                "requests": {
+                  "storage": "1Gi"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "name": "redis-cluster-init",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "backoffLimit": 3,
+        "template": {
+          "spec": {
+            "automountServiceAccountToken": false,
+            "restartPolicy": "OnFailure",
+            "containers": [
+              {
+                "name": "init",
+                "image": "redis:7-alpine",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "50m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "96Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "env": [
+                  {
+                    "name": "REDIS_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "REDIS_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "REDIS_DNS_SUFFIX",
+                    "value": ".redis-nodes"
+                  }
+                ],
+                "command": [
+                  "sh",
+                  "/opt/redis-init.sh"
+                ],
+                "volumeMounts": [
+                  {
+                    "name": "config",
+                    "mountPath": "/opt/redis-init.sh",
+                    "subPath": "redis-init.sh",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "config",
+                "configMap": {
+                  "name": "cluster-config"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "rabbit-nodes",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "rabbit"
+        },
+        "ports": [
+          {
+            "name": "amqp",
+            "port": 5672,
+            "targetPort": 5672
+          },
+          {
+            "name": "epmd",
+            "port": 4369,
+            "targetPort": 4369
+          },
+          {
+            "name": "distribution",
+            "port": 25672,
+            "targetPort": 25672
+          },
+          {
+            "name": "management",
+            "port": 15672,
+            "targetPort": 15672
+          }
+        ],
+        "clusterIP": "None",
+        "publishNotReadyAddresses": true
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "rabbit-ready",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "rabbit"
+        },
+        "ports": [
+          {
+            "name": "amqp",
+            "port": 5672,
+            "targetPort": 5672
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "StatefulSet",
+      "metadata": {
+        "name": "rabbit",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "serviceName": "rabbit-nodes",
+        "replicas": 3,
+        "podManagementPolicy": "Parallel",
+        "selector": {
+          "matchLabels": {
+            "app": "rabbit"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "rabbit"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "containers": [
+              {
+                "name": "rabbit",
+                "image": "rabbitmq:4-management",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "512Mi"
+                  }
+                },
+                "env": [
+                  {
+                    "name": "POD_NAME",
+                    "valueFrom": {
+                      "fieldRef": {
+                        "fieldPath": "metadata.name"
+                      }
+                    }
+                  },
+                  {
+                    "name": "RABBITMQ_USE_LONGNAME",
+                    "value": "true"
+                  },
+                  {
+                    "name": "RABBITMQ_NODENAME",
+                    "value": "rabbit@$(POD_NAME).rabbit-nodes.smartticket.svc.cluster.local"
+                  },
+                  {
+                    "name": "RABBITMQ_DEFAULT_USER",
+                    "value": "smartticket"
+                  },
+                  {
+                    "name": "RABBITMQ_DEFAULT_PASS",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "RABBITMQ_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "RABBITMQ_ERLANG_COOKIE",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "RABBITMQ_COOKIE"
+                      }
+                    }
+                  },
+                  {
+                    "name": "RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS",
+                    "value": "+S 2:2"
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 5672
+                  },
+                  {
+                    "containerPort": 4369
+                  },
+                  {
+                    "containerPort": 25672
+                  },
+                  {
+                    "containerPort": 15672
+                  }
+                ],
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-ec",
+                      "rabbitmq-diagnostics -q ping"
+                    ]
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 12
+                },
+                "startupProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-ec",
+                      "rabbitmq-diagnostics -q ping"
+                    ]
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 60
+                },
+                "volumeMounts": [
+                  {
+                    "name": "data",
+                    "mountPath": "/var/lib/rabbitmq"
+                  },
+                  {
+                    "name": "config",
+                    "mountPath": "/etc/rabbitmq/rabbitmq.conf",
+                    "subPath": "rabbitmq.conf",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "config",
+                "configMap": {
+                  "name": "cluster-config",
+                  "defaultMode": 365
+                }
+              }
+            ],
+            "terminationGracePeriodSeconds": 40,
+            "topologySpreadConstraints": [
+              {
+                "maxSkew": 1,
+                "topologyKey": "kubernetes.io/hostname",
+                "whenUnsatisfiable": "ScheduleAnyway",
+                "labelSelector": {
+                  "matchLabels": {
+                    "app": "rabbit"
+                  }
+                }
+              }
+            ],
+            "affinity": {
+              "podAntiAffinity": {
+                "requiredDuringSchedulingIgnoredDuringExecution": [
+                  {
+                    "labelSelector": {
+                      "matchLabels": {
+                        "app": "rabbit"
+                      }
+                    },
+                    "topologyKey": "kubernetes.io/hostname"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "volumeClaimTemplates": [
+          {
+            "metadata": {
+              "name": "data"
+            },
+            "spec": {
+              "accessModes": [
+                "ReadWriteOnce"
+              ],
+              "resources": {
+                "requests": {
+                  "storage": "1Gi"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "registry",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "registry"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "registry",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "replicas": 1,
+        "strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 0
+          }
+        },
+        "selector": {
+          "matchLabels": {
+            "app": "registry"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "registry"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "terminationGracePeriodSeconds": 40,
+            "containers": [
+              {
+                "name": "registry",
+                "image": "smartticket/registry:local",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "384Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "env": [
+                  {
+                    "name": "JAVA_TOOL_OPTIONS",
+                    "value": "-XX:ActiveProcessorCount=2"
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8080
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/readiness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/liveness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 15,
+                  "failureThreshold": 5,
+                  "timeoutSeconds": 3
+                },
+                "startupProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/readiness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "failureThreshold": 90,
+                  "timeoutSeconds": 3
+                }
+              }
+            ],
+            "topologySpreadConstraints": [
+              {
+                "maxSkew": 1,
+                "topologyKey": "kubernetes.io/hostname",
+                "whenUnsatisfiable": "ScheduleAnyway",
+                "labelSelector": {
+                  "matchLabels": {
+                    "app": "registry"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "policy/v1",
+      "kind": "PodDisruptionBudget",
+      "metadata": {
+        "name": "registry",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "minAvailable": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "registry"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "knowledge",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "knowledge"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "knowledge",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "replicas": 2,
+        "strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 0
+          }
+        },
+        "selector": {
+          "matchLabels": {
+            "app": "knowledge"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "knowledge"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "terminationGracePeriodSeconds": 60,
+            "containers": [
+              {
+                "name": "knowledge",
+                "image": "smartticket/knowledge-service:local",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "512Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "env": [
+                  {
+                    "name": "EUREKA_URL",
+                    "value": "http://registry:8080/eureka/"
+                  },
+                  {
+                    "name": "INTERNAL_SERVICE_KEY",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "INTERNAL_SERVICE_KEY"
+                      }
+                    }
+                  },
+                  {
+                    "name": "JAVA_TOOL_OPTIONS",
+                    "value": "-Duser.timezone=Asia/Shanghai -XX:ActiveProcessorCount=2"
+                  },
+                  {
+                    "name": "KNOWLEDGE_DB_URL",
+                    "value": "jdbc:postgresql://postgres:5432/smartticket_knowledge"
+                  },
+                  {
+                    "name": "KNOWLEDGE_DB_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "KNOWLEDGE_DB_PASSWORD"
+                      }
+                    }
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8080
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/readiness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/liveness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 15,
+                  "failureThreshold": 5,
+                  "timeoutSeconds": 3
+                },
+                "startupProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/readiness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "failureThreshold": 90,
+                  "timeoutSeconds": 3
+                }
+              }
+            ],
+            "topologySpreadConstraints": [
+              {
+                "maxSkew": 1,
+                "topologyKey": "kubernetes.io/hostname",
+                "whenUnsatisfiable": "ScheduleAnyway",
+                "labelSelector": {
+                  "matchLabels": {
+                    "app": "knowledge"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "policy/v1",
+      "kind": "PodDisruptionBudget",
+      "metadata": {
+        "name": "knowledge",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "minAvailable": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "knowledge"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "backend",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "backend"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "backend",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "replicas": 2,
+        "strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 0
+          }
+        },
+        "selector": {
+          "matchLabels": {
+            "app": "backend"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "backend"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "terminationGracePeriodSeconds": 60,
+            "containers": [
+              {
+                "name": "backend",
+                "image": "smartticket/backend:local",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "768Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "env": [
+                  {
+                    "name": "EUREKA_URL",
+                    "value": "http://registry:8080/eureka/"
+                  },
+                  {
+                    "name": "INTERNAL_SERVICE_KEY",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "INTERNAL_SERVICE_KEY"
+                      }
+                    }
+                  },
+                  {
+                    "name": "JAVA_TOOL_OPTIONS",
+                    "value": "-Duser.timezone=Asia/Shanghai -XX:ActiveProcessorCount=2"
+                  },
+                  {
+                    "name": "SPRING_PROFILES_ACTIVE",
+                    "value": "enterprise,ai,distributed"
+                  },
+                  {
+                    "name": "SERVER_ADDRESS",
+                    "value": "0.0.0.0"
+                  },
+                  {
+                    "name": "SPRING_DATASOURCE_URL",
+                    "value": "jdbc:postgresql://postgres:5432/intelligent_ticket"
+                  },
+                  {
+                    "name": "SPRING_DATASOURCE_USERNAME",
+                    "value": "core"
+                  },
+                  {
+                    "name": "DB_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "CORE_DB_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "JWT_SECRET",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "JWT_SECRET"
+                      }
+                    }
+                  },
+                  {
+                    "name": "SPRING_CONFIG_IMPORT",
+                    "value": "optional:classpath:empty.properties"
+                  },
+                  {
+                    "name": "REDIS_CLUSTER_NODES",
+                    "value": "redis-0.redis-nodes:6379,redis-1.redis-nodes:6379,redis-2.redis-nodes:6379,redis-3.redis-nodes:6379,redis-4.redis-nodes:6379,redis-5.redis-nodes:6379"
+                  },
+                  {
+                    "name": "SPRING_DATA_REDIS_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "REDIS_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "RABBITMQ_ADDRESSES",
+                    "value": "rabbit-0.rabbit-nodes:5672,rabbit-1.rabbit-nodes:5672,rabbit-2.rabbit-nodes:5672"
+                  },
+                  {
+                    "name": "SPRING_RABBITMQ_USERNAME",
+                    "value": "smartticket"
+                  },
+                  {
+                    "name": "SPRING_RABBITMQ_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "RABBITMQ_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "OLLAMA_URL",
+                    "value": "http://ollama-external:11434"
+                  },
+                  {
+                    "name": "CORS_ORIGINS",
+                    "value": "http://127.0.0.1:8091"
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8080
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/readiness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/liveness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 15,
+                  "failureThreshold": 5,
+                  "timeoutSeconds": 3
+                },
+                "startupProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/readiness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "failureThreshold": 90,
+                  "timeoutSeconds": 3
+                }
+              }
+            ],
+            "topologySpreadConstraints": [
+              {
+                "maxSkew": 1,
+                "topologyKey": "kubernetes.io/hostname",
+                "whenUnsatisfiable": "ScheduleAnyway",
+                "labelSelector": {
+                  "matchLabels": {
+                    "app": "backend"
+                  }
+                }
+              }
+            ],
+            "initContainers": [
+              {
+                "name": "wait-infrastructure",
+                "image": "redis:7-alpine",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "50m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "96Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "env": [
+                  {
+                    "name": "REDIS_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "cluster-secrets",
+                        "key": "REDIS_PASSWORD"
+                      }
+                    }
+                  }
+                ],
+                "command": [
+                  "sh",
+                  "-ec",
+                  "until wget -q --spider http://knowledge:8080/actuator/health/readiness; do sleep 3; done; until nc -z rabbit-ready 5672; do sleep 3; done; until REDISCLI_AUTH=\"$REDIS_PASSWORD\" redis-cli -h redis-0.redis-nodes cluster info | grep -q cluster_state:ok; do sleep 3; done"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "policy/v1",
+      "kind": "PodDisruptionBudget",
+      "metadata": {
+        "name": "backend",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "minAvailable": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "backend"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "gateway",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "gateway"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "gateway",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "replicas": 2,
+        "strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 0
+          }
+        },
+        "selector": {
+          "matchLabels": {
+            "app": "gateway"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "gateway"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "terminationGracePeriodSeconds": 40,
+            "containers": [
+              {
+                "name": "gateway",
+                "image": "smartticket/gateway:local",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "384Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "env": [
+                  {
+                    "name": "EUREKA_URL",
+                    "value": "http://registry:8080/eureka/"
+                  },
+                  {
+                    "name": "JAVA_TOOL_OPTIONS",
+                    "value": "-XX:ActiveProcessorCount=2"
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8080
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/readiness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/liveness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 15,
+                  "failureThreshold": 5,
+                  "timeoutSeconds": 3
+                },
+                "startupProbe": {
+                  "httpGet": {
+                    "path": "/actuator/health/readiness",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "failureThreshold": 90,
+                  "timeoutSeconds": 3
+                }
+              }
+            ],
+            "topologySpreadConstraints": [
+              {
+                "maxSkew": 1,
+                "topologyKey": "kubernetes.io/hostname",
+                "whenUnsatisfiable": "ScheduleAnyway",
+                "labelSelector": {
+                  "matchLabels": {
+                    "app": "gateway"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "policy/v1",
+      "kind": "PodDisruptionBudget",
+      "metadata": {
+        "name": "gateway",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "minAvailable": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "gateway"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "frontend",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "selector": {
+          "app": "frontend"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 80,
+            "targetPort": 80,
+            "nodePort": 30090
+          }
+        ],
+        "type": "NodePort"
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "frontend",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "replicas": 2,
+        "strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxSurge": 1,
+            "maxUnavailable": 0
+          }
+        },
+        "selector": {
+          "matchLabels": {
+            "app": "frontend"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "frontend"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "terminationGracePeriodSeconds": 40,
+            "containers": [
+              {
+                "name": "frontend",
+                "image": "smartticket/frontend:local",
+                "imagePullPolicy": "IfNotPresent",
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "64Mi"
+                  },
+                  "limits": {
+                    "memory": "96Mi"
+                  }
+                },
+                "ports": [
+                  {
+                    "containerPort": 80
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/health",
+                    "port": 80
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/health",
+                    "port": 80
+                  },
+                  "periodSeconds": 15,
+                  "failureThreshold": 5,
+                  "timeoutSeconds": 3
+                },
+                "startupProbe": {
+                  "httpGet": {
+                    "path": "/health",
+                    "port": 80
+                  },
+                  "periodSeconds": 5,
+                  "failureThreshold": 90,
+                  "timeoutSeconds": 3
+                },
+                "volumeMounts": [
+                  {
+                    "name": "config",
+                    "mountPath": "/etc/nginx/conf.d/default.conf",
+                    "subPath": "default.conf",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "topologySpreadConstraints": [
+              {
+                "maxSkew": 1,
+                "topologyKey": "kubernetes.io/hostname",
+                "whenUnsatisfiable": "ScheduleAnyway",
+                "labelSelector": {
+                  "matchLabels": {
+                    "app": "frontend"
+                  }
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "config",
+                "configMap": {
+                  "name": "cluster-config"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "policy/v1",
+      "kind": "PodDisruptionBudget",
+      "metadata": {
+        "name": "frontend",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "minAvailable": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "frontend"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "policy/v1",
+      "kind": "PodDisruptionBudget",
+      "metadata": {
+        "name": "rabbit",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "minAvailable": 2,
+        "selector": {
+          "matchLabels": {
+            "app": "rabbit"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "policy/v1",
+      "kind": "PodDisruptionBudget",
+      "metadata": {
+        "name": "redis",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "minAvailable": 5,
+        "selector": {
+          "matchLabels": {
+            "app": "redis"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "ollama-external",
+        "namespace": "smartticket"
+      },
+      "spec": {
+        "type": "ExternalName",
+        "externalName": "host.docker.internal",
+        "ports": [
+          {
+            "port": 11434
+          }
+        ]
+      }
+    }
+  ]
+}

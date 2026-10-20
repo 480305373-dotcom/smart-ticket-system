@@ -21,6 +21,8 @@ public class TicketController {
 
   private final TicketService ticketService;
   private final OperationLogService operationLogService;
+  @org.springframework.beans.factory.annotation.Autowired
+  private com.smartticket.backend.service.ArticleService articles;
 
   public TicketController(TicketService ticketService, OperationLogService operationLogService) {
     this.ticketService = ticketService;
@@ -159,7 +161,10 @@ public class TicketController {
 
     boolean admin = "ADMIN".equals(user.role());
 
-    return ApiResponse.success(ticketService.getStatistics(user.userId(), admin));
+    var statistics = ticketService.getStatistics(user.userId(), admin);
+    // Knowledge has a separate owner/database in distributed deployments.
+    statistics.setArticleCount(articles.countVisible(admin));
+    return ApiResponse.success(statistics);
   }
 
   @PatchMapping("/tickets/{id}/assignee")

@@ -1,0 +1,74 @@
+{
+  "result": "PASS",
+  "context": "kind-smartticket",
+  "checks": [
+    {
+      "name": "dedicated Kubernetes nodes are ready",
+      "passed": true
+    },
+    {
+      "name": "redis replicas ready",
+      "passed": true,
+      "replicas": 6
+    },
+    {
+      "name": "rabbit replicas ready",
+      "passed": true,
+      "replicas": 3
+    },
+    {
+      "name": "backend replicas ready",
+      "passed": true,
+      "replicas": 2
+    },
+    {
+      "name": "knowledge replicas ready",
+      "passed": true,
+      "replicas": 2
+    },
+    {
+      "name": "gateway replicas ready",
+      "passed": true,
+      "replicas": 2
+    },
+    {
+      "name": "frontend replicas ready",
+      "passed": true,
+      "replicas": 2
+    },
+    {
+      "name": "Rabbit pods occupy three Kubernetes nodes",
+      "passed": true
+    },
+    {
+      "name": "stateful volumes are bound",
+      "passed": true,
+      "count": 10
+    },
+    {
+      "name": "Kubernetes Redis Cluster has full slot coverage",
+      "passed": true
+    },
+    {
+      "name": "Kubernetes quorum queue has 3 online members",
+      "passed": true
+    },
+    {
+      "name": "full HTTP workflow passes through Kubernetes gateway",
+      "passed": true
+    },
+    {
+      "name": "deleted knowledge pod is automatically replaced",
+      "passed": true
+    },
+    {
+      "name": "rolling update retained HTTP availability",
+      "passed": true,
+      "samples": 15
+    }
+  ],
+  "scope": "Local Kubernetes nodes run on one Docker host; not a cross-host or zone failure exercise.",
+  "environment": "GitHub Actions, three-node kind on one runner",
+  "sourceCommit": "e27a372e66bf345cf59cd6129776a5d10470690e",
+  "workflowUrl": "https://github.com/480305373-dotcom/smart-ticket-system/actions/runs/39266307679"
+}

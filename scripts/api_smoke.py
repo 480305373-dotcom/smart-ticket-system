@@ -124,9 +124,9 @@ def main():
         for i in ids: request('DELETE',f'/tickets/{i}',tm)
         for i in article_ids: request('DELETE',f'/knowledge/{i}',tm)
         print('Temporary tickets/articles cleaned up; existing business records preserved.')
-    output={'checks':len(checks),'result':'PASS','requests':checks}
+    output={'checks':len(checks),'result':'PASS','base':BASE,'requests':checks}
     from pathlib import Path
-    destination=Path(__file__).resolve().parents[1]/'docs/api-verification.json'
+    destination=Path(os.environ.get('SMART_TICKET_REPORT',str(Path(__file__).resolve().parents[1]/'docs/api-verification.json')))
     destination.parent.mkdir(exist_ok=True)
     destination.write_text(json.dumps(output,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 

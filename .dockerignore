@@ -9,6 +9,15 @@ artifacts
 !backend/target/
 backend/target/*
 !backend/target/backend-0.0.1-SNAPSHOT.jar
+!knowledge-service/target/
+knowledge-service/target/*
+!knowledge-service/target/knowledge-service-0.0.1-SNAPSHOT.jar
+!gateway/target/
+gateway/target/*
+!gateway/target/gateway-0.0.1-SNAPSHOT.jar
+!registry/target/
+registry/target/*
+!registry/target/registry-0.0.1-SNAPSHOT.jar
 !frontend/dist/
 !frontend/dist/**
 backend/config/*.properties
@@ -16,3 +25,7 @@ backend/config/*.properties
 *.pid
 *.docx
 docs/screenshots
+output
+tmp
+docs/interview
+docs/live-demo

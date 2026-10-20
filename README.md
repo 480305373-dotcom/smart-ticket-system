@@ -2,6 +2,8 @@
 
 **完整版入口：** [运行与运维指南](docs/ENTERPRISE_GUIDE.md)。新增 Redis、事务消息、运维监控、账号管理、真实 Ollama/pgvector 问答及容器部署。原有轻量 dev 模式继续可用。
 
+**分布式模式：** [微服务与集群指南](docs/DISTRIBUTED_GUIDE.md)、[交付与验收报告](docs/DISTRIBUTED_DELIVERY.md)。新增独立知识服务与数据库、Spring Cloud Gateway / Eureka、Redis 3 主 3 从、RabbitMQ 3 节点 Quorum，以及 Kubernetes 多副本部署和故障验证脚本；原单体模式和数据卷保留。
+
 Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。在已有 Spring Boot 后端上增量完善，使用 PostgreSQL 保存用户、工单、沟通记录、处理历史和知识文章。普通用户提交和跟进自己的工单，管理员管理全局工单并维护知识库。
 
 **工单详情的知识推荐仍采用关键词匹配。** `enterprise,ai` 模式另行提供 Ollama + Embedding + pgvector 检索问答，带真实知识出处；两者界面和原理明确区分。`dev` 模式只依赖 PostgreSQL。旧版扩展文档保留作历史参考，当前配置与运行方式以 [完整版指南](docs/ENTERPRISE_GUIDE.md) 为准。
@@ -15,8 +17,9 @@ Smart Ticket System 是企业内部 IT 支持场景的前后端分离项目。�
 | 中间件与 AI | Redis 7、RabbitMQ 4、事务 Outbox / Inbox、Ollama、pgvector、Spring AI |
 | 前端 | Vue 3、Vite、JavaScript、Vue Router、Pinia、Axios、Element Plus |
 | 工程与运维 | Maven Wrapper、JUnit、Playwright、Docker Compose、Nginx、Actuator、Prometheus、Grafana、GitHub Actions |
+| 分布式扩展 | Spring Cloud 2025.1.3、Gateway、Eureka、LoadBalancer、Redis Cluster、Quorum Queue、Kubernetes |
 
-保留当前依赖版本，没有重建后端，也没有引入新的消息队列或微服务。
+保留原后端与既有业务，在其基础上添加可独立部署的知识服务、网关与注册中心模块；单体启动不要求启用分布式组件。
 
 ## 功能
 

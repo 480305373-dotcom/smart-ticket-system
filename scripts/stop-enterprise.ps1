@@ -10,7 +10,8 @@ foreach($ticketEntry in @(@{File='backend-dev.pid';Pattern='*backend-0.0.1-SNAPS
     $ticketProcess=Get-CimInstance Win32_Process -Filter "ProcessId=$ticketProcessId"
     $ticketNormalized=if($ticketProcess){$ticketProcess.CommandLine.Replace('\','/')}else{''}
     $ticketNormalizedRoot=$ticketRoot.Replace('\','/')
-    if($ticketProcess -and $ticketNormalized -like "*$ticketNormalizedRoot*" -and $ticketNormalized -like $ticketEntry.Pattern){
+    $ticketMatches=$ticketNormalized -like $ticketEntry.Pattern -or ($ticketEntry.File -eq 'backend-dev.pid' -and $ticketNormalized -like '*/.runtime/standalone/backend.jar*')
+    if($ticketProcess -and $ticketNormalized -like "*$ticketNormalizedRoot*" -and $ticketMatches){
         if($PSCmdlet.ShouldProcess("项目进程 $ticketProcessId",'停止')){Stop-Process -Id $ticketProcessId}
     }
 }

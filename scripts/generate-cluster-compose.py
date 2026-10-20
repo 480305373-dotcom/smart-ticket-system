@@ -40,7 +40,7 @@ common={'EUREKA_URL':'http://registry:8080/eureka/','INTERNAL_SERVICE_KEY':'${IN
 health={'test':['CMD-SHELL','wget -q --spider http://127.0.0.1:8080/actuator/health/readiness'], 'interval':'10s','start_period':'90s','retries':30}
 services['knowledge']={'image':'smartticket/knowledge-service:local','build':{'context':'.','dockerfile':'docker/distributed/Service.Dockerfile','args':{'MODULE':'knowledge-service'}},
     'environment':{**common,'KNOWLEDGE_DB_URL':'jdbc:postgresql://postgres:5432/smartticket_knowledge','KNOWLEDGE_DB_PASSWORD':'${KNOWLEDGE_DB_PASSWORD:?required}'},
-    'depends_on':{'postgres':{'condition':'service_healthy'},'registry':{'condition':'service_healthy'}},'healthcheck':health,'mem_limit':'512m'}
+    'depends_on':{'postgres':{'condition':'service_healthy'},'registry':{'condition':'service_healthy'}},'healthcheck':health,'mem_limit':'512m','stop_grace_period':'60s'}
 services['backend']={'image':'smartticket/backend:local','build':{'context':'.','dockerfile':'docker/distributed/Service.Dockerfile','args':{'MODULE':'backend'}},
     'environment':{**common,'SPRING_PROFILES_ACTIVE':'enterprise,ai,distributed','SERVER_ADDRESS':'0.0.0.0',
         'SPRING_DATASOURCE_URL':'jdbc:postgresql://postgres:5432/intelligent_ticket','SPRING_DATASOURCE_USERNAME':'core','DB_PASSWORD':'${CORE_DB_PASSWORD:?required}',
@@ -50,7 +50,7 @@ services['backend']={'image':'smartticket/backend:local','build':{'context':'.',
         'OLLAMA_URL':'http://host.docker.internal:11434','CORS_ORIGINS':'http://127.0.0.1:8090'},
     'extra_hosts':['host.docker.internal:host-gateway'],
     'depends_on':{'knowledge':{'condition':'service_healthy'},'redis-init':{'condition':'service_completed_successfully'},**{f'rabbit-{i}':{'condition':'service_healthy'} for i in range(3)}},
-    'healthcheck':health,'mem_limit':'768m','stop_grace_period':'40s'}
+    'healthcheck':health,'mem_limit':'768m','stop_grace_period':'60s'}
 services['gateway']={'image':'smartticket/gateway:local','build':{'context':'.','dockerfile':'docker/distributed/Service.Dockerfile','args':{'MODULE':'gateway'}},
     'environment':{k:v for k,v in common.items() if k!='INTERNAL_SERVICE_KEY'},'depends_on':{'backend':{'condition':'service_healthy'}},'healthcheck':health,'mem_limit':'384m'}
 services['frontend']={'image':'smartticket/frontend:local','build':{'context':'.','dockerfile':'frontend/Dockerfile','target':'prebuilt'},

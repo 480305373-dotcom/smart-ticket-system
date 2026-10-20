@@ -13,7 +13,7 @@ import org.springframework.context.annotation.*;
 /** Imports the existing tested knowledge domain, not the core component scan. */
 @SpringBootApplication
 @Import({ArticleService.class, KnowledgeController.class, MyBatisPlusConfig.class,
-    MyMetaObjectHandler.class, GlobalExceptionHandler.class, ServiceClientConfig.class})
+    MyMetaObjectHandler.class, GlobalExceptionHandler.class, ServiceClientConfig.class, DiscoveryDrainConfig.class})
 public class KnowledgeApplication {
   public static void main(String[] args) { SpringApplication.run(KnowledgeApplication.class,args); }
   @Bean MapperFactoryBean<KnowledgeArticleMapper> articleMapper(org.apache.ibatis.session.SqlSessionFactory factory) {

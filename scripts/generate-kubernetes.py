@@ -85,6 +85,8 @@ def deployment(name,image,env,replicas=2,memory='512Mi',http_port=8080):
             'until wget -q --spider http://knowledge:8080/actuator/health/readiness; do sleep 3; done; '
             'until nc -z rabbit-ready 5672; do sleep 3; done; '
             'until REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h redis-0.redis-nodes cluster info | grep -q cluster_state:ok; do sleep 3; done'],memory='96Mi',cpu='50m')]
+    if name in ('backend','knowledge'):
+        pod['terminationGracePeriodSeconds']=60
     resource('Deployment',name,{'replicas':replicas,'strategy':{'type':'RollingUpdate','rollingUpdate':{'maxSurge':1,'maxUnavailable':0}},
         'selector':{'matchLabels':{'app':name}},'template':{'metadata':{'labels':{'app':name}},'spec':pod}},api='apps/v1')
     resource('PodDisruptionBudget',name,{'minAvailable':1,'selector':{'matchLabels':{'app':name}}},api='policy/v1')

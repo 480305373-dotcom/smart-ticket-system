@@ -343,6 +343,7 @@
         "retries": 30
       },
       "mem_limit": "512m",
+      "stop_grace_period": "60s",
       "restart": "unless-stopped"
     },
     "backend": {
@@ -404,7 +405,7 @@
         "retries": 30
       },
       "mem_limit": "768m",
-      "stop_grace_period": "40s",
+      "stop_grace_period": "60s",
       "restart": "unless-stopped"
     },
     "gateway": {

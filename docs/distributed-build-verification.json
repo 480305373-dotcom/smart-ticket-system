@@ -1,7 +1,7 @@
 {
   "result": "PASS",
   "backend": {
-    "tests": 41,
+    "tests": 43,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -12,8 +12,8 @@
     "build": "PASS"
   },
   "artifactsSha256": {
-    "backend\\target\\backend-0.0.1-SNAPSHOT.jar": "bcfcb795cac1d22b26067b0ed94517e2461cecda31511808185205bee6671005",
-    "knowledge-service\\target\\knowledge-service-0.0.1-SNAPSHOT.jar": "c8183f9bebf1c877aeafd4b9b432f3f7111fb61d9dab4a09f129ed917b64296d",
+    "backend\\target\\backend-0.0.1-SNAPSHOT.jar": "f13429be40cf2ac5543ccbb14d37865be0ff5697a68e668a7775dd7acb48637c",
+    "knowledge-service\\target\\knowledge-service-0.0.1-SNAPSHOT.jar": "11f4cf320ce813ac0720a65b0c2e5af4a598c1f37311f1af5a4c1c11c3ebb942",
     "gateway\\target\\gateway-0.0.1-SNAPSHOT.jar": "86f35cc11556660c2039314946c4f0c5648ca7979baf9e4c3d00ed6ccfde46f6",
     "registry\\target\\registry-0.0.1-SNAPSHOT.jar": "333913699d340a65282df43da4b6f33eab3caa52d038e6cfaaf23527f2583cda"
   },

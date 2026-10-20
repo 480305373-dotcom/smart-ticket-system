@@ -65,6 +65,9 @@ jobs:
           docker compose -p smartticket-cluster --env-file .runtime/distributed.env -f compose.distributed.yaml logs --tail=60 backend knowledge registry gateway
           if test -f .runtime/kubeconfig; then
             kubectl --kubeconfig .runtime/kubeconfig -n smartticket get pods,pvc,events
+            for app in knowledge backend gateway; do
+              kubectl --kubeconfig .runtime/kubeconfig -n smartticket logs -l app=$app --all-containers --tail=80 --prefix=true || true
+            done
           fi
       - name: Save verification evidence
         if: always()

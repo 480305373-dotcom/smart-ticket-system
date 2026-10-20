@@ -57,7 +57,7 @@ def main():
     deadline=time.monotonic()+180;successful=0
     while time.monotonic()<deadline:
         code,_,_=request(base,'/knowledge',token=token)
-        if code!=200:raise AssertionError('Knowledge API failed during rolling update')
+        if code!=200:raise AssertionError(f'Knowledge API failed during rolling update: HTTP {code}')
         successful+=1
         deployment=json.loads(kubectl('get','deployment/knowledge','-o','json'))
         status=deployment.get('status',{})

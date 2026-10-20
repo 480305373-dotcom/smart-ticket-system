@@ -18,11 +18,15 @@ if redis-cli -h "$first" cluster info | grep -q 'cluster_slots_assigned:0'; then
 else
   # Persisted nodes.conf contains old IPs after containers/Pods are recreated.
   # MEET refreshes peer addresses without deleting keys, IDs, roles or slot ownership.
-  for i in 1 2 3 4 5; do
-    host="redis-$i${REDIS_DNS_SUFFIX:-}"
-    peer_ip=$(getent hosts "$host" | awk 'NR==1 {print $1}')
-    test -n "$peer_ip"
-    redis-cli -h "$first" cluster meet "$peer_ip" 6379
+  for source in $hosts; do
+    source_host=${source%:6379}
+    for target in $hosts; do
+      target_host=${target%:6379}
+      if [ "$source_host" = "$target_host" ]; then continue; fi
+      peer_ip=$(getent hosts "$target_host" | awk 'NR==1 {print $1}')
+      test -n "$peer_ip"
+      redis-cli -h "$source_host" cluster meet "$peer_ip" 6379
+    done
   done
 fi
 

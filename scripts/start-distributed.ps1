@@ -19,6 +19,18 @@ try {
     }
     python scripts/verify_distributed_artifacts.py
     if ($LASTEXITCODE -ne 0) { throw 'Distributed executable artifacts are stale; rebuild the Maven reactor.' }
+    $redisTemplateHash=(Get-FileHash docker/distributed/redis-start.sh -Algorithm SHA256).Hash.ToLowerInvariant()
+    $redisContainer=docker compose -p smartticket-cluster --env-file .runtime/distributed.env -f compose.distributed.yaml ps -q redis-0
+    if($LASTEXITCODE -ne 0){throw 'Could not inspect the dedicated Redis deployment'}
+    if($redisContainer){
+        $redisPreviousHash=docker inspect --format '{{index .Config.Labels "smartticket.config-sha256"}}' $redisContainer
+        if($LASTEXITCODE -ne 0){throw 'Could not inspect Redis bootstrap version'}
+        if($redisPreviousHash -ne $redisTemplateHash){
+            # Upgrade the bootstrap consistently; avoid resolving old/new aliases together.
+            docker compose -p smartticket-cluster --env-file .runtime/distributed.env -f compose.distributed.yaml stop redis-0 redis-1 redis-2 redis-3 redis-4 redis-5
+            if($LASTEXITCODE -ne 0){throw 'Could not stop Redis nodes for the bootstrap configuration upgrade'}
+        }
+    }
     $composeArguments=@('compose','-p','smartticket-cluster','--env-file','.runtime/distributed.env','-f','compose.distributed.yaml','up','-d','--scale','backend=2','--scale','knowledge=2')
     if($SkipImageBuild){$composeArguments+='--no-build'}else{$composeArguments+='--build'}
     docker @composeArguments

@@ -18,6 +18,9 @@ try {
     }
     kubectl --kubeconfig $config create namespace smartticket --dry-run=client -o yaml | kubectl --kubeconfig $config apply -f -
     kubectl --kubeconfig $config -n smartticket create secret generic cluster-secrets --from-env-file=.runtime/distributed.env --dry-run=client -o yaml | kubectl --kubeconfig $config apply -f -
+    # Re-run only the disposable initialization Job; StatefulSet volumes are retained.
+    kubectl --kubeconfig $config -n smartticket delete job redis-cluster-init --ignore-not-found
+    if ($LASTEXITCODE -ne 0) { throw 'Previous Redis initialization Job cleanup failed' }
     kubectl --kubeconfig $config apply -k deploy/kubernetes
     if ($LASTEXITCODE -ne 0) { throw 'Kubernetes apply failed' }
     Write-Host 'Resources applied. Inspect readiness before visiting http://127.0.0.1:8091.'

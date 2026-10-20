@@ -56,6 +56,9 @@
         "sh",
         "/opt/redis-start.sh"
       ],
+      "labels": {
+        "smartticket.config-sha256": "8c425acd20b38bb59fb94399c782740942389c682ba38192e298e4fc6239a3db"
+      },
       "environment": {
         "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}",
         "NODE_NAME": "redis-0"
@@ -81,6 +84,9 @@
         "sh",
         "/opt/redis-start.sh"
       ],
+      "labels": {
+        "smartticket.config-sha256": "8c425acd20b38bb59fb94399c782740942389c682ba38192e298e4fc6239a3db"
+      },
       "environment": {
         "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}",
         "NODE_NAME": "redis-1"
@@ -106,6 +112,9 @@
         "sh",
         "/opt/redis-start.sh"
       ],
+      "labels": {
+        "smartticket.config-sha256": "8c425acd20b38bb59fb94399c782740942389c682ba38192e298e4fc6239a3db"
+      },
       "environment": {
         "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}",
         "NODE_NAME": "redis-2"
@@ -131,6 +140,9 @@
         "sh",
         "/opt/redis-start.sh"
       ],
+      "labels": {
+        "smartticket.config-sha256": "8c425acd20b38bb59fb94399c782740942389c682ba38192e298e4fc6239a3db"
+      },
       "environment": {
         "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}",
         "NODE_NAME": "redis-3"
@@ -156,6 +168,9 @@
         "sh",
         "/opt/redis-start.sh"
       ],
+      "labels": {
+        "smartticket.config-sha256": "8c425acd20b38bb59fb94399c782740942389c682ba38192e298e4fc6239a3db"
+      },
       "environment": {
         "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}",
         "NODE_NAME": "redis-4"
@@ -181,6 +196,9 @@
         "sh",
         "/opt/redis-start.sh"
       ],
+      "labels": {
+        "smartticket.config-sha256": "8c425acd20b38bb59fb94399c782740942389c682ba38192e298e4fc6239a3db"
+      },
       "environment": {
         "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}",
         "NODE_NAME": "redis-5"
@@ -206,6 +224,9 @@
         "sh",
         "/opt/init.sh"
       ],
+      "labels": {
+        "smartticket.config-sha256": "2126bbe951b442cc77095d272d684b2c370d32cd040f27fd1c106a0563a193fe"
+      },
       "environment": {
         "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}"
       },

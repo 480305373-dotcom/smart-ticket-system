@@ -1,9 +1,12 @@
 """Render a deterministic, reviewable Compose file. JSON is valid YAML 1.2."""
 import json
+import hashlib
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
 services, volumes = {}, {}
+redis_config_hash=hashlib.sha256((root/'docker/distributed/redis-start.sh').read_bytes()).hexdigest()
+redis_init_hash=hashlib.sha256((root/'docker/distributed/redis-init.sh').read_bytes()).hexdigest()
 services['postgres'] = {
     'image': 'pgvector/pgvector:pg18', 'environment': {
         'POSTGRES_USER': 'cluster_admin', 'POSTGRES_PASSWORD': '${POSTGRES_PASSWORD:?required}',
@@ -17,11 +20,13 @@ services['registry']={'image':'smartticket/registry:local','build':{'context':'.
 for i in range(6):
     name=f'redis-{i}'
     services[name]={'image':'redis:7-alpine','hostname':name,'entrypoint':['sh','/opt/redis-start.sh'],
+        'labels':{'smartticket.config-sha256':redis_config_hash},
         'environment':{'REDIS_PASSWORD':'${REDIS_PASSWORD:?required}','NODE_NAME':name},
         'volumes':[f'{name}:/data','./docker/distributed/redis-start.sh:/opt/redis-start.sh:ro'],
         'healthcheck':{'test':['CMD-SHELL','REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep PONG'],'interval':'5s','retries':30}}
     volumes[name]={}
 services['redis-init']={'image':'redis:7-alpine','restart':'no','entrypoint':['sh','/opt/init.sh'],
+    'labels':{'smartticket.config-sha256':redis_init_hash},
     'environment':{'REDIS_PASSWORD':'${REDIS_PASSWORD:?required}'},
     'volumes':['./docker/distributed/redis-init.sh:/opt/init.sh:ro'],
     'depends_on':{f'redis-{i}':{'condition':'service_healthy'} for i in range(6)}}

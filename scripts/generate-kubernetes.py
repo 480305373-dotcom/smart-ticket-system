@@ -1,5 +1,6 @@
 """Build the checked-in Kubernetes resources from the same scripts as Compose."""
 import json
+import hashlib
 from pathlib import Path
 
 root=Path(__file__).resolve().parent.parent
@@ -40,8 +41,10 @@ def stateful(name,replicas,c,headless,data_path,storage='1Gi',config_mounts=None
         pod['topologySpreadConstraints']=[{'maxSkew':1,'topologyKey':'kubernetes.io/hostname','whenUnsatisfiable':'ScheduleAnyway','labelSelector':{'matchLabels':{'app':name}}}]
     if name=='rabbit':
         pod['affinity']={'podAntiAffinity':{'requiredDuringSchedulingIgnoredDuringExecution':[{'labelSelector':{'matchLabels':{'app':'rabbit'}},'topologyKey':'kubernetes.io/hostname'}]}}
+    metadata={'labels':{'app':name}}
+    if name=='redis':metadata['annotations']={'smartticket.io/config-sha256':hashlib.sha256(files['redis-start.sh'].encode()).hexdigest()}
     resource('StatefulSet',name,{'serviceName':headless,'replicas':replicas,'podManagementPolicy':'Parallel',
-        'selector':{'matchLabels':{'app':name}},'template':{'metadata':{'labels':{'app':name}},'spec':pod},
+        'selector':{'matchLabels':{'app':name}},'template':{'metadata':metadata,'spec':pod},
         'volumeClaimTemplates':[{'metadata':{'name':'data'},'spec':{'accessModes':['ReadWriteOnce'],'resources':{'requests':{'storage':storage}}}}]},api='apps/v1')
 def mount(key,path):return {'name':'config','mountPath':path,'subPath':key,'readOnly':True}
 def exec_probe(cmd):return {'exec':{'command':['sh','-ec',cmd]},'periodSeconds':5,'timeoutSeconds':3,'failureThreshold':12}

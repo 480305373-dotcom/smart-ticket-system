@@ -173,7 +173,7 @@ mvn -B package '-Dinfra.tests=true'
 
 “项目保留了便于学习和启动的单体模式，另外按业务边界拆出知识微服务。分布式模式通过 Spring Cloud Gateway 和 Eureka 进行注册发现与负载均衡，知识服务有独立数据库及账号，核心通过服务接口取得知识内容。Redis 使用 3 主 3 从 Cluster，RabbitMQ 使用 3 节点及 Quorum 队列。部署提供 Kubernetes 的多副本应用、StatefulSet、PVC、探针、滚动更新和故障验证。具体已经在哪些环境通过，以验收报告为准。”
 
-仍需保留的边界：单 PostgreSQL 与单 Eureka、未做跨可用区演练、未建立容量压测数字、未配置云端域名和 TLS、没有通用跨服务事务、没有服务网格或多租户体系。新增四项能力不意味着已经解决所有生产高可用和安全治理问题。
+已有本机容量基线、分布式双库恢复演练和独立正式 HTTPS 部署，见 [容量指南](CAPACITY_GUIDE.md)、[双库恢复](DISTRIBUTED_RECOVERY.md) 和 [正式部署](FORMAL_DEPLOYMENT.md)。仍需保留的边界：单 PostgreSQL 与单 Eureka、未做跨可用区演练、没有生产容量承诺、没有公网域名或公有证书、没有通用跨服务事务、服务网格或多租户体系。
 
 ## 11. 官方依据
 

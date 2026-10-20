@@ -1,0 +1,26 @@
+{
+  "result": "PASS",
+  "createdAt": "2026-10-20T05:19:41.125348+00:00",
+  "method": "Quiesced two-database pg_dump + isolated pg_restore with application roles",
+  "network": "none",
+  "sourceDatabasesModified": false,
+  "checks": [
+    {
+      "database": "intelligent_ticket",
+      "tables": 14,
+      "rows": 17,
+      "tableContentsAndSequencesMatch": true,
+      "ownerRoleCanRead": true
+    },
+    {
+      "database": "smartticket_knowledge",
+      "tables": 1,
+      "rows": 0,
+      "tableContentsAndSequencesMatch": true,
+      "ownerRoleCanRead": true
+    }
+  ],
+  "crossDatabaseConnectionsDenied": true,
+  "restoreSeconds": 14.54,
+  "scope": "Logical restore drill on one local Docker host; not PostgreSQL failover or a measured production RTO/RPO"
+}

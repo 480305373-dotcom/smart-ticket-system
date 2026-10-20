@@ -1,0 +1,1673 @@
+{
+  "result": "PASS",
+  "createdAt": "2026-10-20T04:57:41.157877+00:00",
+  "sourceCommit": "46d03fc4585cad5d856e9529359e75d7817e7925",
+  "environment": {
+    "client": "Python stdlib HTTP/1.1, persistent connection per worker",
+    "platform": "Windows",
+    "docker": {
+      "cpus": 32,
+      "memoryBytes": 8163401728
+    },
+    "otherProjectsMayShareResources": true,
+    "coreReplicas": 2,
+    "knowledgeReplicas": 2
+  },
+  "workload": {
+    "method": "closed-loop authenticated reads",
+    "paths": [
+      "/tickets/page?current=1&size=10",
+      "/tickets/statistics",
+      "/tickets/page?current=1&size=10",
+      "/knowledge?current=1&size=10"
+    ],
+    "durationPerStageSeconds": 20,
+    "dataset": {
+      "users": 8,
+      "tickets": 41
+    }
+  },
+  "normalRateLimit": {
+    "perUserPerMinute": 120,
+    "statuses": {
+      "200": 120,
+      "429": 15
+    }
+  },
+  "measurementRateLimit": {
+    "perUserPerMinute": 120000,
+    "authenticationAndRedisLimiterRemainEnabled": true
+  },
+  "criteria": {
+    "maxErrorRate": 0.01,
+    "maxP95Ms": 2000
+  },
+  "stages": [
+    {
+      "concurrency": 1,
+      "requests": 1900,
+      "successful": 1900,
+      "seconds": 20.009,
+      "requestsPerSecond": 94.96,
+      "successfulRequestsPerSecond": 94.96,
+      "errorRate": 0.0,
+      "statuses": {
+        "200": 1900
+      },
+      "successLatencyMs": {
+        "p50": 10.08,
+        "p95": 15.17,
+        "p99": 17.66,
+        "max": 164.52
+      },
+      "allLatencyMs": {
+        "p95": 15.17
+      },
+      "instances": [
+        "12b9a3042c11",
+        "2acbea9af3f1",
+        "38dc170a1655",
+        "d28ba26ec51a"
+      ],
+      "resourcesBefore": [
+        {
+          "BlockIO": "0B / 111kB",
+          "CPUPerc": "0.50%",
+          "Container": "12b9a3042c111518395f680884e0c21c47a35652b10e60d76118402483ea2d2c",
+          "ID": "12b9a3042c11",
+          "MemPerc": "50.87%",
+          "MemUsage": "390.7MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-1",
+          "NetIO": "688kB / 910kB",
+          "PIDs": "66"
+        },
+        {
+          "BlockIO": "0B / 111kB",
+          "CPUPerc": "0.34%",
+          "Container": "2acbea9af3f1c9d909c2f40cc8363c504b90a89d9a2d6995dc40a3016d7ed370",
+          "ID": "2acbea9af3f1",
+          "MemPerc": "50.73%",
+          "MemUsage": "389.6MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-2",
+          "NetIO": "741kB / 1.02MB",
+          "PIDs": "66"
+        },
+        {
+          "BlockIO": "32.8kB / 4.1kB",
+          "CPUPerc": "0.00%",
+          "Container": "8e704ae87c6681558a3f9b2683a79eb4df32fc861655b19f7436080218f8e790",
+          "ID": "8e704ae87c66",
+          "MemPerc": "39.63%",
+          "MemUsage": "25.36MiB / 64MiB",
+          "Name": "smartticket-cluster-frontend-1",
+          "NetIO": "3.63MB / 3.78MB",
+          "PIDs": "33"
+        },
+        {
+          "BlockIO": "143kB / 2.85MB",
+          "CPUPerc": "0.49%",
+          "Container": "59aea4159a78199c14db2f6672e45ca87b948d73a56c6fe54d2f4789804526b5",
+          "ID": "59aea4159a78",
+          "MemPerc": "62.67%",
+          "MemUsage": "240.7MiB / 384MiB",
+          "Name": "smartticket-cluster-gateway-1",
+          "NetIO": "4.47MB / 4.76MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 2.82MB",
+          "CPUPerc": "0.10%",
+          "Container": "d28ba26ec51aa02bbcd10072db11964f4aa47dbcefa14d5c7cf4820fcb2bed77",
+          "ID": "d28ba26ec51a",
+          "MemPerc": "61.45%",
+          "MemUsage": "314.6MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-1",
+          "NetIO": "3.36MB / 4.2MB",
+          "PIDs": "50"
+        },
+        {
+          "BlockIO": "0B / 2.85MB",
+          "CPUPerc": "0.10%",
+          "Container": "38dc170a16550b929d475dcfaca193513734ef86abe46cac1fb328717e32c177",
+          "ID": "38dc170a1655",
+          "MemPerc": "61.07%",
+          "MemUsage": "312.7MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-2",
+          "NetIO": "3.7MB / 4.56MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "2.49MB / 1.08MB",
+          "CPUPerc": "0.14%",
+          "Container": "57a92f139b51d68b5428709a993f6d757359b4f8fbb1bd2bd97d1a9ade55c619",
+          "ID": "57a92f139b51",
+          "MemPerc": "1.26%",
+          "MemUsage": "98.27MiB / 7.603GiB",
+          "Name": "smartticket-cluster-postgres-1",
+          "NetIO": "8.14MB / 9.05MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "61.4kB / 758kB",
+          "CPUPerc": "1115.20%",
+          "Container": "bbfddc1158dd342a4516cdf26d66e61f8b0487ef86cfc6b4cde0d75381e9d3e1",
+          "ID": "bbfddc1158dd",
+          "MemPerc": "2.73%",
+          "MemUsage": "212.3MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-0-1",
+          "NetIO": "25.1MB / 25.5MB",
+          "PIDs": "109"
+        },
+        {
+          "BlockIO": "0B / 745kB",
+          "CPUPerc": "0.49%",
+          "Container": "d89da006fca9801484c35c298deab07ed465611d0b7f98f55d2d704480af98f2",
+          "ID": "d89da006fca9",
+          "MemPerc": "1.47%",
+          "MemUsage": "114.3MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-1-1",
+          "NetIO": "25.5MB / 24.5MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 258kB",
+          "CPUPerc": "0.42%",
+          "Container": "fa47cb86ade19d201463e72a031b91bdcbe4d2180ec314a43008a1ea62434997",
+          "ID": "fa47cb86ade1",
+          "MemPerc": "1.44%",
+          "MemUsage": "111.9MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-2-1",
+          "NetIO": "23.3MB / 24MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "49.2kB / 152kB",
+          "CPUPerc": "0.38%",
+          "Container": "025dfc55e2ffd0dab86eb7886a3e747e8f3eca3b82e0e2ba23ba0dbd341a4fb2",
+          "ID": "025dfc55e2ff",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.074MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-0-1",
+          "NetIO": "67.4MB / 76.3MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "77.8kB / 201kB",
+          "CPUPerc": "0.45%",
+          "Container": "9dd40182df8d34ad037b4a24e9ba80480f64c5b20f34e223e524bd2274ea383d",
+          "ID": "9dd40182df8d",
+          "MemPerc": "0.09%",
+          "MemUsage": "6.723MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-1-1",
+          "NetIO": "69.2MB / 77.8MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "77.8kB / 193kB",
+          "CPUPerc": "0.47%",
+          "Container": "f0d08d2e3b69a13eb79a10e52250da7fca469bdb99419c89084ce2ae7d8fbcda",
+          "ID": "f0d08d2e3b69",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.148MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-2-1",
+          "NetIO": "68.2MB / 77.6MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "73.7kB / 193kB",
+          "CPUPerc": "0.42%",
+          "Container": "99009ade3944fe5ab5791d201bf857effd47b5ce4167c7659cb19949075658cb",
+          "ID": "99009ade3944",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.289MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-3-1",
+          "NetIO": "69.3MB / 77.7MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "106kB / 274kB",
+          "CPUPerc": "0.39%",
+          "Container": "48bb17f069184c84103f938d960b1bd3598a690a5ca550e6b360a0d2c8b9054c",
+          "ID": "48bb17f06918",
+          "MemPerc": "0.09%",
+          "MemUsage": "6.715MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-4-1",
+          "NetIO": "68.6MB / 77.1MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "81.9kB / 209kB",
+          "CPUPerc": "0.45%",
+          "Container": "4b09aa09d004d671a802958c82da17a55849fd88196f1e4076a38c729835ebc6",
+          "ID": "4b09aa09d004",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.176MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-5-1",
+          "NetIO": "67.8MB / 76.9MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "0B / 2.83MB",
+          "CPUPerc": "3.84%",
+          "Container": "01505a102adfed870c86e4f7e11a009dd6c3cf3ec931a7ce6719fe8bbb1da0c6",
+          "ID": "01505a102adf",
+          "MemPerc": "63.47%",
+          "MemUsage": "243.7MiB / 384MiB",
+          "Name": "smartticket-cluster-registry-1",
+          "NetIO": "5.77MB / 3.87MB",
+          "PIDs": "61"
+        }
+      ],
+      "resourcesAfter": [
+        {
+          "BlockIO": "0B / 143kB",
+          "CPUPerc": "2.50%",
+          "Container": "12b9a3042c111518395f680884e0c21c47a35652b10e60d76118402483ea2d2c",
+          "ID": "12b9a3042c11",
+          "MemPerc": "53.39%",
+          "MemUsage": "410MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-1",
+          "NetIO": "2.86MB / 4.14MB",
+          "PIDs": "66"
+        },
+        {
+          "BlockIO": "0B / 143kB",
+          "CPUPerc": "0.21%",
+          "Container": "2acbea9af3f1c9d909c2f40cc8363c504b90a89d9a2d6995dc40a3016d7ed370",
+          "ID": "2acbea9af3f1",
+          "MemPerc": "52.89%",
+          "MemUsage": "406.2MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-2",
+          "NetIO": "2.95MB / 4.28MB",
+          "PIDs": "66"
+        },
+        {
+          "BlockIO": "32.8kB / 4.1kB",
+          "CPUPerc": "0.00%",
+          "Container": "8e704ae87c6681558a3f9b2683a79eb4df32fc861655b19f7436080218f8e790",
+          "ID": "8e704ae87c66",
+          "MemPerc": "39.47%",
+          "MemUsage": "25.26MiB / 64MiB",
+          "Name": "smartticket-cluster-frontend-1",
+          "NetIO": "14.4MB / 14.9MB",
+          "PIDs": "33"
+        },
+        {
+          "BlockIO": "143kB / 2.86MB",
+          "CPUPerc": "0.18%",
+          "Container": "59aea4159a78199c14db2f6672e45ca87b948d73a56c6fe54d2f4789804526b5",
+          "ID": "59aea4159a78",
+          "MemPerc": "63.20%",
+          "MemUsage": "242.7MiB / 384MiB",
+          "Name": "smartticket-cluster-gateway-1",
+          "NetIO": "15.4MB / 15.6MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 2.83MB",
+          "CPUPerc": "0.10%",
+          "Container": "d28ba26ec51aa02bbcd10072db11964f4aa47dbcefa14d5c7cf4820fcb2bed77",
+          "ID": "d28ba26ec51a",
+          "MemPerc": "62.29%",
+          "MemUsage": "318.9MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-1",
+          "NetIO": "6.11MB / 7.26MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "0B / 2.87MB",
+          "CPUPerc": "0.09%",
+          "Container": "38dc170a16550b929d475dcfaca193513734ef86abe46cac1fb328717e32c177",
+          "ID": "38dc170a1655",
+          "MemPerc": "62.31%",
+          "MemUsage": "319MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-2",
+          "NetIO": "6.4MB / 7.58MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "2.49MB / 1.09MB",
+          "CPUPerc": "0.06%",
+          "Container": "57a92f139b51d68b5428709a993f6d757359b4f8fbb1bd2bd97d1a9ade55c619",
+          "ID": "57a92f139b51",
+          "MemPerc": "1.26%",
+          "MemUsage": "98.39MiB / 7.603GiB",
+          "Name": "smartticket-cluster-postgres-1",
+          "NetIO": "9.5MB / 15.8MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "61.4kB / 758kB",
+          "CPUPerc": "1141.96%",
+          "Container": "bbfddc1158dd342a4516cdf26d66e61f8b0487ef86cfc6b4cde0d75381e9d3e1",
+          "ID": "bbfddc1158dd",
+          "MemPerc": "2.64%",
+          "MemUsage": "205.7MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-0-1",
+          "NetIO": "25.2MB / 25.6MB",
+          "PIDs": "109"
+        },
+        {
+          "BlockIO": "0B / 745kB",
+          "CPUPerc": "0.64%",
+          "Container": "d89da006fca9801484c35c298deab07ed465611d0b7f98f55d2d704480af98f2",
+          "ID": "d89da006fca9",
+          "MemPerc": "1.47%",
+          "MemUsage": "114.2MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-1-1",
+          "NetIO": "25.5MB / 24.6MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 258kB",
+          "CPUPerc": "0.38%",
+          "Container": "fa47cb86ade19d201463e72a031b91bdcbe4d2180ec314a43008a1ea62434997",
+          "ID": "fa47cb86ade1",
+          "MemPerc": "1.43%",
+          "MemUsage": "111.3MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-2-1",
+          "NetIO": "23.4MB / 24.1MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "135kB / 451kB",
+          "CPUPerc": "0.37%",
+          "Container": "025dfc55e2ffd0dab86eb7886a3e747e8f3eca3b82e0e2ba23ba0dbd341a4fb2",
+          "ID": "025dfc55e2ff",
+          "MemPerc": "0.08%",
+          "MemUsage": "5.93MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-0-1",
+          "NetIO": "68MB / 76.7MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "81.9kB / 205kB",
+          "CPUPerc": "0.32%",
+          "Container": "9dd40182df8d34ad037b4a24e9ba80480f64c5b20f34e223e524bd2274ea383d",
+          "ID": "9dd40182df8d",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.238MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-1-1",
+          "NetIO": "69.8MB / 78.2MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "77.8kB / 193kB",
+          "CPUPerc": "0.52%",
+          "Container": "f0d08d2e3b69a13eb79a10e52250da7fca469bdb99419c89084ce2ae7d8fbcda",
+          "ID": "f0d08d2e3b69",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.414MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-2-1",
+          "NetIO": "68.4MB / 77.9MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "73.7kB / 193kB",
+          "CPUPerc": "0.39%",
+          "Container": "99009ade3944fe5ab5791d201bf857effd47b5ce4167c7659cb19949075658cb",
+          "ID": "99009ade3944",
+          "MemPerc": "0.09%",
+          "MemUsage": "6.633MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-3-1",
+          "NetIO": "69.5MB / 78MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "193kB / 569kB",
+          "CPUPerc": "0.41%",
+          "Container": "48bb17f069184c84103f938d960b1bd3598a690a5ca550e6b360a0d2c8b9054c",
+          "ID": "48bb17f06918",
+          "MemPerc": "0.11%",
+          "MemUsage": "8.273MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-4-1",
+          "NetIO": "69.4MB / 78MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "86kB / 213kB",
+          "CPUPerc": "0.42%",
+          "Container": "4b09aa09d004d671a802958c82da17a55849fd88196f1e4076a38c729835ebc6",
+          "ID": "4b09aa09d004",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.508MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-5-1",
+          "NetIO": "68MB / 77.1MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "0B / 2.84MB",
+          "CPUPerc": "1.00%",
+          "Container": "01505a102adfed870c86e4f7e11a009dd6c3cf3ec931a7ce6719fe8bbb1da0c6",
+          "ID": "01505a102adf",
+          "MemPerc": "63.28%",
+          "MemUsage": "243MiB / 384MiB",
+          "Name": "smartticket-cluster-registry-1",
+          "NetIO": "5.79MB / 3.9MB",
+          "PIDs": "61"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "concurrency": 4,
+      "requests": 8388,
+      "successful": 8388,
+      "seconds": 20.013,
+      "requestsPerSecond": 419.12,
+      "successfulRequestsPerSecond": 419.12,
+      "errorRate": 0.0,
+      "statuses": {
+        "200": 8388
+      },
+      "successLatencyMs": {
+        "p50": 9.0,
+        "p95": 13.58,
+        "p99": 15.88,
+        "max": 418.29
+      },
+      "allLatencyMs": {
+        "p95": 13.58
+      },
+      "instances": [
+        "12b9a3042c11",
+        "2acbea9af3f1",
+        "38dc170a1655",
+        "d28ba26ec51a"
+      ],
+      "resourcesBefore": [
+        {
+          "BlockIO": "0B / 143kB",
+          "CPUPerc": "0.18%",
+          "Container": "12b9a3042c111518395f680884e0c21c47a35652b10e60d76118402483ea2d2c",
+          "ID": "12b9a3042c11",
+          "MemPerc": "53.25%",
+          "MemUsage": "409MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-1",
+          "NetIO": "2.86MB / 4.15MB",
+          "PIDs": "66"
+        },
+        {
+          "BlockIO": "0B / 143kB",
+          "CPUPerc": "0.21%",
+          "Container": "2acbea9af3f1c9d909c2f40cc8363c504b90a89d9a2d6995dc40a3016d7ed370",
+          "ID": "2acbea9af3f1",
+          "MemPerc": "52.87%",
+          "MemUsage": "406MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-2",
+          "NetIO": "2.95MB / 4.28MB",
+          "PIDs": "66"
+        },
+        {
+          "BlockIO": "32.8kB / 4.1kB",
+          "CPUPerc": "0.00%",
+          "Container": "8e704ae87c6681558a3f9b2683a79eb4df32fc861655b19f7436080218f8e790",
+          "ID": "8e704ae87c66",
+          "MemPerc": "39.45%",
+          "MemUsage": "25.25MiB / 64MiB",
+          "Name": "smartticket-cluster-frontend-1",
+          "NetIO": "14.4MB / 14.9MB",
+          "PIDs": "33"
+        },
+        {
+          "BlockIO": "143kB / 2.86MB",
+          "CPUPerc": "0.27%",
+          "Container": "59aea4159a78199c14db2f6672e45ca87b948d73a56c6fe54d2f4789804526b5",
+          "ID": "59aea4159a78",
+          "MemPerc": "63.19%",
+          "MemUsage": "242.7MiB / 384MiB",
+          "Name": "smartticket-cluster-gateway-1",
+          "NetIO": "15.4MB / 15.6MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 2.83MB",
+          "CPUPerc": "0.19%",
+          "Container": "d28ba26ec51aa02bbcd10072db11964f4aa47dbcefa14d5c7cf4820fcb2bed77",
+          "ID": "d28ba26ec51a",
+          "MemPerc": "62.41%",
+          "MemUsage": "319.6MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-1",
+          "NetIO": "6.11MB / 7.26MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "0B / 2.87MB",
+          "CPUPerc": "2.52%",
+          "Container": "38dc170a16550b929d475dcfaca193513734ef86abe46cac1fb328717e32c177",
+          "ID": "38dc170a1655",
+          "MemPerc": "62.65%",
+          "MemUsage": "320.8MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-2",
+          "NetIO": "6.4MB / 7.58MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "2.49MB / 1.09MB",
+          "CPUPerc": "0.07%",
+          "Container": "57a92f139b51d68b5428709a993f6d757359b4f8fbb1bd2bd97d1a9ade55c619",
+          "ID": "57a92f139b51",
+          "MemPerc": "1.27%",
+          "MemUsage": "98.9MiB / 7.603GiB",
+          "Name": "smartticket-cluster-postgres-1",
+          "NetIO": "9.51MB / 15.8MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "61.4kB / 758kB",
+          "CPUPerc": "0.36%",
+          "Container": "bbfddc1158dd342a4516cdf26d66e61f8b0487ef86cfc6b4cde0d75381e9d3e1",
+          "ID": "bbfddc1158dd",
+          "MemPerc": "1.47%",
+          "MemUsage": "114.4MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-0-1",
+          "NetIO": "25.2MB / 25.6MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 745kB",
+          "CPUPerc": "0.34%",
+          "Container": "d89da006fca9801484c35c298deab07ed465611d0b7f98f55d2d704480af98f2",
+          "ID": "d89da006fca9",
+          "MemPerc": "1.47%",
+          "MemUsage": "114.3MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-1-1",
+          "NetIO": "25.5MB / 24.6MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 258kB",
+          "CPUPerc": "0.17%",
+          "Container": "fa47cb86ade19d201463e72a031b91bdcbe4d2180ec314a43008a1ea62434997",
+          "ID": "fa47cb86ade1",
+          "MemPerc": "1.43%",
+          "MemUsage": "111.4MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-2-1",
+          "NetIO": "23.4MB / 24.1MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "135kB / 451kB",
+          "CPUPerc": "0.29%",
+          "Container": "025dfc55e2ffd0dab86eb7886a3e747e8f3eca3b82e0e2ba23ba0dbd341a4fb2",
+          "ID": "025dfc55e2ff",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.277MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-0-1",
+          "NetIO": "68MB / 76.7MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "81.9kB / 205kB",
+          "CPUPerc": "0.28%",
+          "Container": "9dd40182df8d34ad037b4a24e9ba80480f64c5b20f34e223e524bd2274ea383d",
+          "ID": "9dd40182df8d",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.465MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-1-1",
+          "NetIO": "69.8MB / 78.2MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "77.8kB / 193kB",
+          "CPUPerc": "0.31%",
+          "Container": "f0d08d2e3b69a13eb79a10e52250da7fca469bdb99419c89084ce2ae7d8fbcda",
+          "ID": "f0d08d2e3b69",
+          "MemPerc": "0.09%",
+          "MemUsage": "6.66MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-2-1",
+          "NetIO": "68.4MB / 77.9MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "73.7kB / 193kB",
+          "CPUPerc": "0.30%",
+          "Container": "99009ade3944fe5ab5791d201bf857effd47b5ce4167c7659cb19949075658cb",
+          "ID": "99009ade3944",
+          "MemPerc": "0.09%",
+          "MemUsage": "6.789MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-3-1",
+          "NetIO": "69.6MB / 78MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "193kB / 569kB",
+          "CPUPerc": "0.34%",
+          "Container": "48bb17f069184c84103f938d960b1bd3598a690a5ca550e6b360a0d2c8b9054c",
+          "ID": "48bb17f06918",
+          "MemPerc": "0.11%",
+          "MemUsage": "8.633MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-4-1",
+          "NetIO": "69.4MB / 78MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "86kB / 213kB",
+          "CPUPerc": "0.33%",
+          "Container": "4b09aa09d004d671a802958c82da17a55849fd88196f1e4076a38c729835ebc6",
+          "ID": "4b09aa09d004",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.219MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-5-1",
+          "NetIO": "68MB / 77.1MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "0B / 2.84MB",
+          "CPUPerc": "0.84%",
+          "Container": "01505a102adfed870c86e4f7e11a009dd6c3cf3ec931a7ce6719fe8bbb1da0c6",
+          "ID": "01505a102adf",
+          "MemPerc": "63.54%",
+          "MemUsage": "244MiB / 384MiB",
+          "Name": "smartticket-cluster-registry-1",
+          "NetIO": "5.79MB / 3.9MB",
+          "PIDs": "61"
+        }
+      ],
+      "resourcesAfter": [
+        {
+          "BlockIO": "0B / 160kB",
+          "CPUPerc": "0.27%",
+          "Container": "12b9a3042c111518395f680884e0c21c47a35652b10e60d76118402483ea2d2c",
+          "ID": "12b9a3042c11",
+          "MemPerc": "55.16%",
+          "MemUsage": "423.6MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-1",
+          "NetIO": "12MB / 18.4MB",
+          "PIDs": "68"
+        },
+        {
+          "BlockIO": "0B / 160kB",
+          "CPUPerc": "0.18%",
+          "Container": "2acbea9af3f1c9d909c2f40cc8363c504b90a89d9a2d6995dc40a3016d7ed370",
+          "ID": "2acbea9af3f1",
+          "MemPerc": "54.67%",
+          "MemUsage": "419.8MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-2",
+          "NetIO": "11.8MB / 18.1MB",
+          "PIDs": "68"
+        },
+        {
+          "BlockIO": "32.8kB / 4.1kB",
+          "CPUPerc": "0.00%",
+          "Container": "8e704ae87c6681558a3f9b2683a79eb4df32fc861655b19f7436080218f8e790",
+          "ID": "8e704ae87c66",
+          "MemPerc": "41.56%",
+          "MemUsage": "26.6MiB / 64MiB",
+          "Name": "smartticket-cluster-frontend-1",
+          "NetIO": "62.1MB / 64MB",
+          "PIDs": "33"
+        },
+        {
+          "BlockIO": "143kB / 2.88MB",
+          "CPUPerc": "0.14%",
+          "Container": "59aea4159a78199c14db2f6672e45ca87b948d73a56c6fe54d2f4789804526b5",
+          "ID": "59aea4159a78",
+          "MemPerc": "63.97%",
+          "MemUsage": "245.6MiB / 384MiB",
+          "Name": "smartticket-cluster-gateway-1",
+          "NetIO": "63.6MB / 63.8MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 2.85MB",
+          "CPUPerc": "0.10%",
+          "Container": "d28ba26ec51aa02bbcd10072db11964f4aa47dbcefa14d5c7cf4820fcb2bed77",
+          "ID": "d28ba26ec51a",
+          "MemPerc": "63.86%",
+          "MemUsage": "326.9MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-1",
+          "NetIO": "18MB / 20.5MB",
+          "PIDs": "51"
+        },
+        {
+          "BlockIO": "0B / 2.88MB",
+          "CPUPerc": "0.11%",
+          "Container": "38dc170a16550b929d475dcfaca193513734ef86abe46cac1fb328717e32c177",
+          "ID": "38dc170a1655",
+          "MemPerc": "63.76%",
+          "MemUsage": "326.4MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-2",
+          "NetIO": "18.3MB / 20.8MB",
+          "PIDs": "51"
+        },
+        {
+          "BlockIO": "2.49MB / 1.09MB",
+          "CPUPerc": "0.06%",
+          "Container": "57a92f139b51d68b5428709a993f6d757359b4f8fbb1bd2bd97d1a9ade55c619",
+          "ID": "57a92f139b51",
+          "MemPerc": "1.31%",
+          "MemUsage": "101.7MiB / 7.603GiB",
+          "Name": "smartticket-cluster-postgres-1",
+          "NetIO": "14.9MB / 45.8MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "61.4kB / 758kB",
+          "CPUPerc": "0.34%",
+          "Container": "bbfddc1158dd342a4516cdf26d66e61f8b0487ef86cfc6b4cde0d75381e9d3e1",
+          "ID": "bbfddc1158dd",
+          "MemPerc": "1.47%",
+          "MemUsage": "114.5MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-0-1",
+          "NetIO": "25.3MB / 25.7MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 745kB",
+          "CPUPerc": "0.32%",
+          "Container": "d89da006fca9801484c35c298deab07ed465611d0b7f98f55d2d704480af98f2",
+          "ID": "d89da006fca9",
+          "MemPerc": "1.47%",
+          "MemUsage": "114.3MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-1-1",
+          "NetIO": "25.6MB / 24.7MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 258kB",
+          "CPUPerc": "0.26%",
+          "Container": "fa47cb86ade19d201463e72a031b91bdcbe4d2180ec314a43008a1ea62434997",
+          "ID": "fa47cb86ade1",
+          "MemPerc": "1.43%",
+          "MemUsage": "111.1MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-2-1",
+          "NetIO": "23.5MB / 24.2MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "135kB / 451kB",
+          "CPUPerc": "0.30%",
+          "Container": "025dfc55e2ffd0dab86eb7886a3e747e8f3eca3b82e0e2ba23ba0dbd341a4fb2",
+          "ID": "025dfc55e2ff",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.453MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-0-1",
+          "NetIO": "68.2MB / 77MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "168kB / 1.22MB",
+          "CPUPerc": "0.32%",
+          "Container": "9dd40182df8d34ad037b4a24e9ba80480f64c5b20f34e223e524bd2274ea383d",
+          "ID": "9dd40182df8d",
+          "MemPerc": "0.10%",
+          "MemUsage": "7.582MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-1-1",
+          "NetIO": "73.9MB / 81.1MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "77.8kB / 193kB",
+          "CPUPerc": "0.34%",
+          "Container": "f0d08d2e3b69a13eb79a10e52250da7fca469bdb99419c89084ce2ae7d8fbcda",
+          "ID": "f0d08d2e3b69",
+          "MemPerc": "0.10%",
+          "MemUsage": "7.418MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-2-1",
+          "NetIO": "68.6MB / 78.1MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "73.7kB / 193kB",
+          "CPUPerc": "0.34%",
+          "Container": "99009ade3944fe5ab5791d201bf857effd47b5ce4167c7659cb19949075658cb",
+          "ID": "99009ade3944",
+          "MemPerc": "0.09%",
+          "MemUsage": "6.746MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-3-1",
+          "NetIO": "69.8MB / 78.3MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "193kB / 569kB",
+          "CPUPerc": "0.33%",
+          "Container": "48bb17f069184c84103f938d960b1bd3598a690a5ca550e6b360a0d2c8b9054c",
+          "ID": "48bb17f06918",
+          "MemPerc": "0.11%",
+          "MemUsage": "8.465MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-4-1",
+          "NetIO": "70MB / 78.6MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "172kB / 1.23MB",
+          "CPUPerc": "0.35%",
+          "Container": "4b09aa09d004d671a802958c82da17a55849fd88196f1e4076a38c729835ebc6",
+          "ID": "4b09aa09d004",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.133MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-5-1",
+          "NetIO": "69.7MB / 77.7MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "0B / 2.85MB",
+          "CPUPerc": "1.16%",
+          "Container": "01505a102adfed870c86e4f7e11a009dd6c3cf3ec931a7ce6719fe8bbb1da0c6",
+          "ID": "01505a102adf",
+          "MemPerc": "63.39%",
+          "MemUsage": "243.4MiB / 384MiB",
+          "Name": "smartticket-cluster-registry-1",
+          "NetIO": "5.81MB / 3.93MB",
+          "PIDs": "61"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "concurrency": 8,
+      "requests": 18214,
+      "successful": 18214,
+      "seconds": 20.009,
+      "requestsPerSecond": 910.28,
+      "successfulRequestsPerSecond": 910.28,
+      "errorRate": 0.0,
+      "statuses": {
+        "200": 18214
+      },
+      "successLatencyMs": {
+        "p50": 8.55,
+        "p95": 12.12,
+        "p99": 13.76,
+        "max": 32.88
+      },
+      "allLatencyMs": {
+        "p95": 12.12
+      },
+      "instances": [
+        "12b9a3042c11",
+        "2acbea9af3f1",
+        "38dc170a1655",
+        "d28ba26ec51a"
+      ],
+      "resourcesBefore": [
+        {
+          "BlockIO": "0B / 160kB",
+          "CPUPerc": "0.20%",
+          "Container": "12b9a3042c111518395f680884e0c21c47a35652b10e60d76118402483ea2d2c",
+          "ID": "12b9a3042c11",
+          "MemPerc": "55.02%",
+          "MemUsage": "422.6MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-1",
+          "NetIO": "12MB / 18.4MB",
+          "PIDs": "68"
+        },
+        {
+          "BlockIO": "0B / 160kB",
+          "CPUPerc": "0.23%",
+          "Container": "2acbea9af3f1c9d909c2f40cc8363c504b90a89d9a2d6995dc40a3016d7ed370",
+          "ID": "2acbea9af3f1",
+          "MemPerc": "54.58%",
+          "MemUsage": "419.2MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-2",
+          "NetIO": "11.8MB / 18.1MB",
+          "PIDs": "68"
+        },
+        {
+          "BlockIO": "32.8kB / 4.1kB",
+          "CPUPerc": "0.57%",
+          "Container": "8e704ae87c6681558a3f9b2683a79eb4df32fc861655b19f7436080218f8e790",
+          "ID": "8e704ae87c66",
+          "MemPerc": "49.01%",
+          "MemUsage": "31.37MiB / 64MiB",
+          "Name": "smartticket-cluster-frontend-1",
+          "NetIO": "62.1MB / 64MB",
+          "PIDs": "39"
+        },
+        {
+          "BlockIO": "143kB / 2.88MB",
+          "CPUPerc": "0.10%",
+          "Container": "59aea4159a78199c14db2f6672e45ca87b948d73a56c6fe54d2f4789804526b5",
+          "ID": "59aea4159a78",
+          "MemPerc": "63.87%",
+          "MemUsage": "245.3MiB / 384MiB",
+          "Name": "smartticket-cluster-gateway-1",
+          "NetIO": "63.6MB / 63.8MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 2.85MB",
+          "CPUPerc": "0.48%",
+          "Container": "d28ba26ec51aa02bbcd10072db11964f4aa47dbcefa14d5c7cf4820fcb2bed77",
+          "ID": "d28ba26ec51a",
+          "MemPerc": "63.85%",
+          "MemUsage": "326.9MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-1",
+          "NetIO": "18MB / 20.5MB",
+          "PIDs": "51"
+        },
+        {
+          "BlockIO": "0B / 2.88MB",
+          "CPUPerc": "0.08%",
+          "Container": "38dc170a16550b929d475dcfaca193513734ef86abe46cac1fb328717e32c177",
+          "ID": "38dc170a1655",
+          "MemPerc": "63.75%",
+          "MemUsage": "326.4MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-2",
+          "NetIO": "18.3MB / 20.8MB",
+          "PIDs": "51"
+        },
+        {
+          "BlockIO": "2.49MB / 1.09MB",
+          "CPUPerc": "0.35%",
+          "Container": "57a92f139b51d68b5428709a993f6d757359b4f8fbb1bd2bd97d1a9ade55c619",
+          "ID": "57a92f139b51",
+          "MemPerc": "1.28%",
+          "MemUsage": "99.77MiB / 7.603GiB",
+          "Name": "smartticket-cluster-postgres-1",
+          "NetIO": "14.9MB / 45.8MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "61.4kB / 758kB",
+          "CPUPerc": "0.50%",
+          "Container": "bbfddc1158dd342a4516cdf26d66e61f8b0487ef86cfc6b4cde0d75381e9d3e1",
+          "ID": "bbfddc1158dd",
+          "MemPerc": "1.46%",
+          "MemUsage": "113.6MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-0-1",
+          "NetIO": "25.3MB / 25.7MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 745kB",
+          "CPUPerc": "5.30%",
+          "Container": "d89da006fca9801484c35c298deab07ed465611d0b7f98f55d2d704480af98f2",
+          "ID": "d89da006fca9",
+          "MemPerc": "1.96%",
+          "MemUsage": "152.9MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-1-1",
+          "NetIO": "25.6MB / 24.7MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 258kB",
+          "CPUPerc": "0.23%",
+          "Container": "fa47cb86ade19d201463e72a031b91bdcbe4d2180ec314a43008a1ea62434997",
+          "ID": "fa47cb86ade1",
+          "MemPerc": "1.43%",
+          "MemUsage": "111.1MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-2-1",
+          "NetIO": "23.5MB / 24.2MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "135kB / 451kB",
+          "CPUPerc": "0.32%",
+          "Container": "025dfc55e2ffd0dab86eb7886a3e747e8f3eca3b82e0e2ba23ba0dbd341a4fb2",
+          "ID": "025dfc55e2ff",
+          "MemPerc": "0.10%",
+          "MemUsage": "7.723MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-0-1",
+          "NetIO": "68.3MB / 77MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "168kB / 1.22MB",
+          "CPUPerc": "0.35%",
+          "Container": "9dd40182df8d34ad037b4a24e9ba80480f64c5b20f34e223e524bd2274ea383d",
+          "ID": "9dd40182df8d",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.102MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-1-1",
+          "NetIO": "73.9MB / 81.1MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "77.8kB / 193kB",
+          "CPUPerc": "0.28%",
+          "Container": "f0d08d2e3b69a13eb79a10e52250da7fca469bdb99419c89084ce2ae7d8fbcda",
+          "ID": "f0d08d2e3b69",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.059MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-2-1",
+          "NetIO": "68.7MB / 78.2MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "73.7kB / 193kB",
+          "CPUPerc": "0.33%",
+          "Container": "99009ade3944fe5ab5791d201bf857effd47b5ce4167c7659cb19949075658cb",
+          "ID": "99009ade3944",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.258MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-3-1",
+          "NetIO": "69.8MB / 78.3MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "193kB / 569kB",
+          "CPUPerc": "0.35%",
+          "Container": "48bb17f069184c84103f938d960b1bd3598a690a5ca550e6b360a0d2c8b9054c",
+          "ID": "48bb17f06918",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.008MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-4-1",
+          "NetIO": "70MB / 78.7MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "172kB / 1.23MB",
+          "CPUPerc": "0.40%",
+          "Container": "4b09aa09d004d671a802958c82da17a55849fd88196f1e4076a38c729835ebc6",
+          "ID": "4b09aa09d004",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.328MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-5-1",
+          "NetIO": "69.7MB / 77.7MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "0B / 2.85MB",
+          "CPUPerc": "0.85%",
+          "Container": "01505a102adfed870c86e4f7e11a009dd6c3cf3ec931a7ce6719fe8bbb1da0c6",
+          "ID": "01505a102adf",
+          "MemPerc": "63.57%",
+          "MemUsage": "244.1MiB / 384MiB",
+          "Name": "smartticket-cluster-registry-1",
+          "NetIO": "5.81MB / 3.93MB",
+          "PIDs": "61"
+        }
+      ],
+      "resourcesAfter": [
+        {
+          "BlockIO": "0B / 176kB",
+          "CPUPerc": "0.17%",
+          "Container": "12b9a3042c111518395f680884e0c21c47a35652b10e60d76118402483ea2d2c",
+          "ID": "12b9a3042c11",
+          "MemPerc": "56.01%",
+          "MemUsage": "430.1MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-1",
+          "NetIO": "31.4MB / 48.7MB",
+          "PIDs": "68"
+        },
+        {
+          "BlockIO": "0B / 176kB",
+          "CPUPerc": "0.17%",
+          "Container": "2acbea9af3f1c9d909c2f40cc8363c504b90a89d9a2d6995dc40a3016d7ed370",
+          "ID": "2acbea9af3f1",
+          "MemPerc": "55.48%",
+          "MemUsage": "426.1MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-2",
+          "NetIO": "31.3MB / 48.5MB",
+          "PIDs": "68"
+        },
+        {
+          "BlockIO": "32.8kB / 4.1kB",
+          "CPUPerc": "0.00%",
+          "Container": "8e704ae87c6681558a3f9b2683a79eb4df32fc861655b19f7436080218f8e790",
+          "ID": "8e704ae87c66",
+          "MemPerc": "44.43%",
+          "MemUsage": "28.44MiB / 64MiB",
+          "Name": "smartticket-cluster-frontend-1",
+          "NetIO": "166MB / 170MB",
+          "PIDs": "33"
+        },
+        {
+          "BlockIO": "143kB / 2.9MB",
+          "CPUPerc": "2.36%",
+          "Container": "59aea4159a78199c14db2f6672e45ca87b948d73a56c6fe54d2f4789804526b5",
+          "ID": "59aea4159a78",
+          "MemPerc": "64.22%",
+          "MemUsage": "246.6MiB / 384MiB",
+          "Name": "smartticket-cluster-gateway-1",
+          "NetIO": "168MB / 168MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 2.87MB",
+          "CPUPerc": "0.14%",
+          "Container": "d28ba26ec51aa02bbcd10072db11964f4aa47dbcefa14d5c7cf4820fcb2bed77",
+          "ID": "d28ba26ec51a",
+          "MemPerc": "64.70%",
+          "MemUsage": "331.3MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-1",
+          "NetIO": "43.9MB / 49.1MB",
+          "PIDs": "52"
+        },
+        {
+          "BlockIO": "0B / 2.9MB",
+          "CPUPerc": "0.09%",
+          "Container": "38dc170a16550b929d475dcfaca193513734ef86abe46cac1fb328717e32c177",
+          "ID": "38dc170a1655",
+          "MemPerc": "64.67%",
+          "MemUsage": "331.1MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-2",
+          "NetIO": "44.2MB / 49.4MB",
+          "PIDs": "52"
+        },
+        {
+          "BlockIO": "2.49MB / 1.09MB",
+          "CPUPerc": "3.95%",
+          "Container": "57a92f139b51d68b5428709a993f6d757359b4f8fbb1bd2bd97d1a9ade55c619",
+          "ID": "57a92f139b51",
+          "MemPerc": "1.36%",
+          "MemUsage": "105.7MiB / 7.603GiB",
+          "Name": "smartticket-cluster-postgres-1",
+          "NetIO": "26.4MB / 111MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "61.4kB / 758kB",
+          "CPUPerc": "0.28%",
+          "Container": "bbfddc1158dd342a4516cdf26d66e61f8b0487ef86cfc6b4cde0d75381e9d3e1",
+          "ID": "bbfddc1158dd",
+          "MemPerc": "1.46%",
+          "MemUsage": "113.6MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-0-1",
+          "NetIO": "25.4MB / 25.8MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 745kB",
+          "CPUPerc": "0.31%",
+          "Container": "d89da006fca9801484c35c298deab07ed465611d0b7f98f55d2d704480af98f2",
+          "ID": "d89da006fca9",
+          "MemPerc": "1.47%",
+          "MemUsage": "114.3MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-1-1",
+          "NetIO": "25.7MB / 24.8MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 258kB",
+          "CPUPerc": "0.25%",
+          "Container": "fa47cb86ade19d201463e72a031b91bdcbe4d2180ec314a43008a1ea62434997",
+          "ID": "fa47cb86ade1",
+          "MemPerc": "1.42%",
+          "MemUsage": "110.8MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-2-1",
+          "NetIO": "23.6MB / 24.3MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "143kB / 459kB",
+          "CPUPerc": "0.33%",
+          "Container": "025dfc55e2ffd0dab86eb7886a3e747e8f3eca3b82e0e2ba23ba0dbd341a4fb2",
+          "ID": "025dfc55e2ff",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.176MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-0-1",
+          "NetIO": "68.5MB / 77.3MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "254kB / 3.34MB",
+          "CPUPerc": "0.27%",
+          "Container": "9dd40182df8d34ad037b4a24e9ba80480f64c5b20f34e223e524bd2274ea383d",
+          "ID": "9dd40182df8d",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.07MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-1-1",
+          "NetIO": "82.6MB / 87.1MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "81.9kB / 197kB",
+          "CPUPerc": "2.26%",
+          "Container": "f0d08d2e3b69a13eb79a10e52250da7fca469bdb99419c89084ce2ae7d8fbcda",
+          "ID": "f0d08d2e3b69",
+          "MemPerc": "0.10%",
+          "MemUsage": "7.535MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-2-1",
+          "NetIO": "68.9MB / 78.4MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "77.8kB / 197kB",
+          "CPUPerc": "2.95%",
+          "Container": "99009ade3944fe5ab5791d201bf857effd47b5ce4167c7659cb19949075658cb",
+          "ID": "99009ade3944",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.445MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-3-1",
+          "NetIO": "70MB / 78.6MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "201kB / 578kB",
+          "CPUPerc": "2.30%",
+          "Container": "48bb17f069184c84103f938d960b1bd3598a690a5ca550e6b360a0d2c8b9054c",
+          "ID": "48bb17f06918",
+          "MemPerc": "0.11%",
+          "MemUsage": "8.316MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-4-1",
+          "NetIO": "70.9MB / 79.8MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "258kB / 3.35MB",
+          "CPUPerc": "0.28%",
+          "Container": "4b09aa09d004d671a802958c82da17a55849fd88196f1e4076a38c729835ebc6",
+          "ID": "4b09aa09d004",
+          "MemPerc": "0.11%",
+          "MemUsage": "8.516MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-5-1",
+          "NetIO": "73MB / 78.5MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "0B / 2.86MB",
+          "CPUPerc": "0.82%",
+          "Container": "01505a102adfed870c86e4f7e11a009dd6c3cf3ec931a7ce6719fe8bbb1da0c6",
+          "ID": "01505a102adf",
+          "MemPerc": "63.47%",
+          "MemUsage": "243.7MiB / 384MiB",
+          "Name": "smartticket-cluster-registry-1",
+          "NetIO": "5.83MB / 3.96MB",
+          "PIDs": "61"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "concurrency": 16,
+      "requests": 24656,
+      "successful": 24656,
+      "seconds": 20.016,
+      "requestsPerSecond": 1231.79,
+      "successfulRequestsPerSecond": 1231.79,
+      "errorRate": 0.0,
+      "statuses": {
+        "200": 24656
+      },
+      "successLatencyMs": {
+        "p50": 11.16,
+        "p95": 21.75,
+        "p99": 28.57,
+        "max": 674.12
+      },
+      "allLatencyMs": {
+        "p95": 21.75
+      },
+      "instances": [
+        "12b9a3042c11",
+        "2acbea9af3f1",
+        "38dc170a1655",
+        "d28ba26ec51a"
+      ],
+      "resourcesBefore": [
+        {
+          "BlockIO": "0B / 176kB",
+          "CPUPerc": "0.17%",
+          "Container": "12b9a3042c111518395f680884e0c21c47a35652b10e60d76118402483ea2d2c",
+          "ID": "12b9a3042c11",
+          "MemPerc": "55.89%",
+          "MemUsage": "429.2MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-1",
+          "NetIO": "31.4MB / 48.7MB",
+          "PIDs": "68"
+        },
+        {
+          "BlockIO": "0B / 176kB",
+          "CPUPerc": "0.23%",
+          "Container": "2acbea9af3f1c9d909c2f40cc8363c504b90a89d9a2d6995dc40a3016d7ed370",
+          "ID": "2acbea9af3f1",
+          "MemPerc": "55.33%",
+          "MemUsage": "425MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-2",
+          "NetIO": "31.3MB / 48.5MB",
+          "PIDs": "68"
+        },
+        {
+          "BlockIO": "32.8kB / 4.1kB",
+          "CPUPerc": "0.00%",
+          "Container": "8e704ae87c6681558a3f9b2683a79eb4df32fc861655b19f7436080218f8e790",
+          "ID": "8e704ae87c66",
+          "MemPerc": "43.73%",
+          "MemUsage": "27.99MiB / 64MiB",
+          "Name": "smartticket-cluster-frontend-1",
+          "NetIO": "166MB / 170MB",
+          "PIDs": "33"
+        },
+        {
+          "BlockIO": "143kB / 2.9MB",
+          "CPUPerc": "0.13%",
+          "Container": "59aea4159a78199c14db2f6672e45ca87b948d73a56c6fe54d2f4789804526b5",
+          "ID": "59aea4159a78",
+          "MemPerc": "64.07%",
+          "MemUsage": "246MiB / 384MiB",
+          "Name": "smartticket-cluster-gateway-1",
+          "NetIO": "168MB / 168MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 2.87MB",
+          "CPUPerc": "1.21%",
+          "Container": "d28ba26ec51aa02bbcd10072db11964f4aa47dbcefa14d5c7cf4820fcb2bed77",
+          "ID": "d28ba26ec51a",
+          "MemPerc": "64.67%",
+          "MemUsage": "331.1MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-1",
+          "NetIO": "43.9MB / 49.1MB",
+          "PIDs": "52"
+        },
+        {
+          "BlockIO": "0B / 2.9MB",
+          "CPUPerc": "2.54%",
+          "Container": "38dc170a16550b929d475dcfaca193513734ef86abe46cac1fb328717e32c177",
+          "ID": "38dc170a1655",
+          "MemPerc": "65.04%",
+          "MemUsage": "333MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-2",
+          "NetIO": "44.2MB / 49.4MB",
+          "PIDs": "52"
+        },
+        {
+          "BlockIO": "2.49MB / 1.09MB",
+          "CPUPerc": "0.10%",
+          "Container": "57a92f139b51d68b5428709a993f6d757359b4f8fbb1bd2bd97d1a9ade55c619",
+          "ID": "57a92f139b51",
+          "MemPerc": "1.34%",
+          "MemUsage": "104.3MiB / 7.603GiB",
+          "Name": "smartticket-cluster-postgres-1",
+          "NetIO": "26.4MB / 111MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "61.4kB / 758kB",
+          "CPUPerc": "0.28%",
+          "Container": "bbfddc1158dd342a4516cdf26d66e61f8b0487ef86cfc6b4cde0d75381e9d3e1",
+          "ID": "bbfddc1158dd",
+          "MemPerc": "1.46%",
+          "MemUsage": "113.3MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-0-1",
+          "NetIO": "25.4MB / 25.8MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 745kB",
+          "CPUPerc": "793.02%",
+          "Container": "d89da006fca9801484c35c298deab07ed465611d0b7f98f55d2d704480af98f2",
+          "ID": "d89da006fca9",
+          "MemPerc": "2.31%",
+          "MemUsage": "180.1MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-1-1",
+          "NetIO": "25.7MB / 24.8MB",
+          "PIDs": "109"
+        },
+        {
+          "BlockIO": "0B / 258kB",
+          "CPUPerc": "0.23%",
+          "Container": "fa47cb86ade19d201463e72a031b91bdcbe4d2180ec314a43008a1ea62434997",
+          "ID": "fa47cb86ade1",
+          "MemPerc": "1.42%",
+          "MemUsage": "110.8MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-2-1",
+          "NetIO": "23.6MB / 24.3MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "143kB / 459kB",
+          "CPUPerc": "0.35%",
+          "Container": "025dfc55e2ffd0dab86eb7886a3e747e8f3eca3b82e0e2ba23ba0dbd341a4fb2",
+          "ID": "025dfc55e2ff",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.496MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-0-1",
+          "NetIO": "68.5MB / 77.3MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "254kB / 3.34MB",
+          "CPUPerc": "0.74%",
+          "Container": "9dd40182df8d34ad037b4a24e9ba80480f64c5b20f34e223e524bd2274ea383d",
+          "ID": "9dd40182df8d",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.352MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-1-1",
+          "NetIO": "82.7MB / 87.1MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "81.9kB / 197kB",
+          "CPUPerc": "1.13%",
+          "Container": "f0d08d2e3b69a13eb79a10e52250da7fca469bdb99419c89084ce2ae7d8fbcda",
+          "ID": "f0d08d2e3b69",
+          "MemPerc": "0.07%",
+          "MemUsage": "5.602MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-2-1",
+          "NetIO": "68.9MB / 78.4MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "77.8kB / 197kB",
+          "CPUPerc": "0.46%",
+          "Container": "99009ade3944fe5ab5791d201bf857effd47b5ce4167c7659cb19949075658cb",
+          "ID": "99009ade3944",
+          "MemPerc": "0.07%",
+          "MemUsage": "5.523MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-3-1",
+          "NetIO": "70.1MB / 78.6MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "201kB / 578kB",
+          "CPUPerc": "0.44%",
+          "Container": "48bb17f069184c84103f938d960b1bd3598a690a5ca550e6b360a0d2c8b9054c",
+          "ID": "48bb17f06918",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.16MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-4-1",
+          "NetIO": "70.9MB / 79.8MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "258kB / 3.35MB",
+          "CPUPerc": "0.37%",
+          "Container": "4b09aa09d004d671a802958c82da17a55849fd88196f1e4076a38c729835ebc6",
+          "ID": "4b09aa09d004",
+          "MemPerc": "0.10%",
+          "MemUsage": "7.461MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-5-1",
+          "NetIO": "73MB / 78.5MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "0B / 2.86MB",
+          "CPUPerc": "4.31%",
+          "Container": "01505a102adfed870c86e4f7e11a009dd6c3cf3ec931a7ce6719fe8bbb1da0c6",
+          "ID": "01505a102adf",
+          "MemPerc": "63.58%",
+          "MemUsage": "244.2MiB / 384MiB",
+          "Name": "smartticket-cluster-registry-1",
+          "NetIO": "5.83MB / 3.96MB",
+          "PIDs": "61"
+        }
+      ],
+      "resourcesAfter": [
+        {
+          "BlockIO": "0B / 193kB",
+          "CPUPerc": "0.49%",
+          "Container": "12b9a3042c111518395f680884e0c21c47a35652b10e60d76118402483ea2d2c",
+          "ID": "12b9a3042c11",
+          "MemPerc": "57.02%",
+          "MemUsage": "437.9MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-1",
+          "NetIO": "57.6MB / 89.8MB",
+          "PIDs": "71"
+        },
+        {
+          "BlockIO": "0B / 193kB",
+          "CPUPerc": "2.44%",
+          "Container": "2acbea9af3f1c9d909c2f40cc8363c504b90a89d9a2d6995dc40a3016d7ed370",
+          "ID": "2acbea9af3f1",
+          "MemPerc": "56.43%",
+          "MemUsage": "433.4MiB / 768MiB",
+          "Name": "smartticket-cluster-backend-2",
+          "NetIO": "57.5MB / 89.6MB",
+          "PIDs": "73"
+        },
+        {
+          "BlockIO": "32.8kB / 4.1kB",
+          "CPUPerc": "0.00%",
+          "Container": "8e704ae87c6681558a3f9b2683a79eb4df32fc861655b19f7436080218f8e790",
+          "ID": "8e704ae87c66",
+          "MemPerc": "46.42%",
+          "MemUsage": "29.71MiB / 64MiB",
+          "Name": "smartticket-cluster-frontend-1",
+          "NetIO": "306MB / 314MB",
+          "PIDs": "33"
+        },
+        {
+          "BlockIO": "143kB / 2.91MB",
+          "CPUPerc": "0.06%",
+          "Container": "59aea4159a78199c14db2f6672e45ca87b948d73a56c6fe54d2f4789804526b5",
+          "ID": "59aea4159a78",
+          "MemPerc": "64.18%",
+          "MemUsage": "246.4MiB / 384MiB",
+          "Name": "smartticket-cluster-gateway-1",
+          "NetIO": "309MB / 310MB",
+          "PIDs": "32"
+        },
+        {
+          "BlockIO": "0B / 2.88MB",
+          "CPUPerc": "0.09%",
+          "Container": "d28ba26ec51aa02bbcd10072db11964f4aa47dbcefa14d5c7cf4820fcb2bed77",
+          "ID": "d28ba26ec51a",
+          "MemPerc": "65.37%",
+          "MemUsage": "334.7MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-1",
+          "NetIO": "78.9MB / 87.9MB",
+          "PIDs": "52"
+        },
+        {
+          "BlockIO": "0B / 2.92MB",
+          "CPUPerc": "0.12%",
+          "Container": "38dc170a16550b929d475dcfaca193513734ef86abe46cac1fb328717e32c177",
+          "ID": "38dc170a1655",
+          "MemPerc": "65.55%",
+          "MemUsage": "335.6MiB / 512MiB",
+          "Name": "smartticket-cluster-knowledge-2",
+          "NetIO": "79.1MB / 88.2MB",
+          "PIDs": "56"
+        },
+        {
+          "BlockIO": "2.49MB / 1.09MB",
+          "CPUPerc": "3.95%",
+          "Container": "57a92f139b51d68b5428709a993f6d757359b4f8fbb1bd2bd97d1a9ade55c619",
+          "ID": "57a92f139b51",
+          "MemPerc": "1.38%",
+          "MemUsage": "107.8MiB / 7.603GiB",
+          "Name": "smartticket-cluster-postgres-1",
+          "NetIO": "42MB / 199MB",
+          "PIDs": "49"
+        },
+        {
+          "BlockIO": "61.4kB / 758kB",
+          "CPUPerc": "0.27%",
+          "Container": "bbfddc1158dd342a4516cdf26d66e61f8b0487ef86cfc6b4cde0d75381e9d3e1",
+          "ID": "bbfddc1158dd",
+          "MemPerc": "1.46%",
+          "MemUsage": "113.8MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-0-1",
+          "NetIO": "25.5MB / 25.9MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 745kB",
+          "CPUPerc": "0.22%",
+          "Container": "d89da006fca9801484c35c298deab07ed465611d0b7f98f55d2d704480af98f2",
+          "ID": "d89da006fca9",
+          "MemPerc": "1.46%",
+          "MemUsage": "114MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-1-1",
+          "NetIO": "25.8MB / 24.9MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "0B / 258kB",
+          "CPUPerc": "0.18%",
+          "Container": "fa47cb86ade19d201463e72a031b91bdcbe4d2180ec314a43008a1ea62434997",
+          "ID": "fa47cb86ade1",
+          "MemPerc": "1.43%",
+          "MemUsage": "111.1MiB / 7.603GiB",
+          "Name": "smartticket-cluster-rabbit-2-1",
+          "NetIO": "23.7MB / 24.3MB",
+          "PIDs": "25"
+        },
+        {
+          "BlockIO": "201kB / 2.03MB",
+          "CPUPerc": "0.32%",
+          "Container": "025dfc55e2ffd0dab86eb7886a3e747e8f3eca3b82e0e2ba23ba0dbd341a4fb2",
+          "ID": "025dfc55e2ff",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.02MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-0-1",
+          "NetIO": "71.1MB / 78MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "295kB / 4.61MB",
+          "CPUPerc": "0.28%",
+          "Container": "9dd40182df8d34ad037b4a24e9ba80480f64c5b20f34e223e524bd2274ea383d",
+          "ID": "9dd40182df8d",
+          "MemPerc": "0.09%",
+          "MemUsage": "6.961MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-1-1",
+          "NetIO": "90.6MB / 91.7MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "81.9kB / 197kB",
+          "CPUPerc": "2.03%",
+          "Container": "f0d08d2e3b69a13eb79a10e52250da7fca469bdb99419c89084ce2ae7d8fbcda",
+          "ID": "f0d08d2e3b69",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.32MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-2-1",
+          "NetIO": "69.1MB / 78.7MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "77.8kB / 197kB",
+          "CPUPerc": "0.29%",
+          "Container": "99009ade3944fe5ab5791d201bf857effd47b5ce4167c7659cb19949075658cb",
+          "ID": "99009ade3944",
+          "MemPerc": "0.08%",
+          "MemUsage": "6.207MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-3-1",
+          "NetIO": "70.3MB / 78.9MB",
+          "PIDs": "6"
+        },
+        {
+          "BlockIO": "258kB / 2.15MB",
+          "CPUPerc": "2.25%",
+          "Container": "48bb17f069184c84103f938d960b1bd3598a690a5ca550e6b360a0d2c8b9054c",
+          "ID": "48bb17f06918",
+          "MemPerc": "0.11%",
+          "MemUsage": "8.594MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-4-1",
+          "NetIO": "75.8MB / 84.4MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "299kB / 4.62MB",
+          "CPUPerc": "0.30%",
+          "Container": "4b09aa09d004d671a802958c82da17a55849fd88196f1e4076a38c729835ebc6",
+          "ID": "4b09aa09d004",
+          "MemPerc": "0.09%",
+          "MemUsage": "7.039MiB / 7.603GiB",
+          "Name": "smartticket-cluster-redis-5-1",
+          "NetIO": "75.1MB / 79.1MB",
+          "PIDs": "7"
+        },
+        {
+          "BlockIO": "0B / 2.88MB",
+          "CPUPerc": "0.76%",
+          "Container": "01505a102adfed870c86e4f7e11a009dd6c3cf3ec931a7ce6719fe8bbb1da0c6",
+          "ID": "01505a102adf",
+          "MemPerc": "63.67%",
+          "MemUsage": "244.5MiB / 384MiB",
+          "Name": "smartticket-cluster-registry-1",
+          "NetIO": "5.85MB / 3.99MB",
+          "PIDs": "61"
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "standardConfigurationRestored": true,
+  "scope": "Measured lower bound for this small dataset on one shared local Docker host; not maximum capacity, sustained production capacity, write throughput or AI throughput. 429 is a rejected request and is never counted as a successful transaction."
+}

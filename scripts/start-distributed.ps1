@@ -17,6 +17,8 @@ try {
         & "$PSScriptRoot/npm.ps1" --prefix frontend run build
         if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed' }
     }
+    python scripts/verify_distributed_artifacts.py
+    if ($LASTEXITCODE -ne 0) { throw 'Distributed executable artifacts are stale; rebuild the Maven reactor.' }
     $composeArguments=@('compose','-p','smartticket-cluster','--env-file','.runtime/distributed.env','-f','compose.distributed.yaml','up','-d','--scale','backend=2','--scale','knowledge=2')
     if($SkipImageBuild){$composeArguments+='--no-build'}else{$composeArguments+='--build'}
     docker @composeArguments

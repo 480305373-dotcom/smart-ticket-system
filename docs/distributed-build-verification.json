@@ -13,7 +13,7 @@
   },
   "artifactsSha256": {
     "backend\\target\\backend-0.0.1-SNAPSHOT.jar": "f13429be40cf2ac5543ccbb14d37865be0ff5697a68e668a7775dd7acb48637c",
-    "knowledge-service\\target\\knowledge-service-0.0.1-SNAPSHOT.jar": "11f4cf320ce813ac0720a65b0c2e5af4a598c1f37311f1af5a4c1c11c3ebb942",
+    "knowledge-service\\target\\knowledge-service-0.0.1-SNAPSHOT.jar": "3266c57196971fe5ce4e75bb76e13814e74b57edc043c37be91fb0091f8459e0",
     "gateway\\target\\gateway-0.0.1-SNAPSHOT.jar": "86f35cc11556660c2039314946c4f0c5648ca7979baf9e4c3d00ed6ccfde46f6",
     "registry\\target\\registry-0.0.1-SNAPSHOT.jar": "333913699d340a65282df43da4b6f33eab3caa52d038e6cfaaf23527f2583cda"
   },

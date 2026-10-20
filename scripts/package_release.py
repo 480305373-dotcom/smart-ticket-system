@@ -1,6 +1,9 @@
 """Build a portable source + binaries release, excluding local secrets, backups and personal documents."""
 from pathlib import Path
 import subprocess,zipfile,hashlib,json,datetime
+from verify_distributed_artifacts import verify
+
+verify()
 
 root=Path(__file__).resolve().parents[1]
 names=subprocess.check_output(['git','-c',f'safe.directory={root.as_posix()}','ls-files','-z','--cached'],cwd=root).decode('utf-8').split('\0')

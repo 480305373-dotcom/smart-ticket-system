@@ -8,5 +8,9 @@
     <dependency><groupId>com.smartticket</groupId><artifactId>backend</artifactId><version>0.0.1-SNAPSHOT</version><classifier>library</classifier></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc-test</artifactId><scope>test</scope></dependency>
   </dependencies>
-  <build><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin></plugins></build>
+  <build><plugins>
+    <!-- Rebuild before repackage even when only the shared domain dependency changed. -->
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId><configuration><forceCreation>true</forceCreation></configuration></plugin>
+    <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
+  </plugins></build>
 </project>

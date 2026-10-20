@@ -1,5 +1,7 @@
 # 企业智能工单与知识协同平台
 
+**稳定成品入口：** [正式 HTTPS 部署](docs/FORMAL_DEPLOYMENT.md)、[容量压测](docs/CAPACITY_GUIDE.md)、[分布式双库恢复](docs/DISTRIBUTED_RECOVERY.md)。完整验收后可生成包含四个后端可执行模块、前端静态资源和操作指南的成品 ZIP；当前结果与边界见 [成品交付报告](docs/PRODUCT_DELIVERY.md)。
+
 **完整版入口：** [运行与运维指南](docs/ENTERPRISE_GUIDE.md)。新增 Redis、事务消息、运维监控、账号管理、真实 Ollama/pgvector 问答及容器部署。原有轻量 dev 模式继续可用。
 
 **分布式模式：** [微服务与集群指南](docs/DISTRIBUTED_GUIDE.md)、[交付与验收报告](docs/DISTRIBUTED_DELIVERY.md)。新增独立知识服务与数据库、Spring Cloud Gateway / Eureka、Redis 3 主 3 从、RabbitMQ 3 节点 Quorum，以及 Kubernetes 多副本部署和故障验证脚本；原单体模式和数据卷保留。

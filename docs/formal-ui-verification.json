@@ -1,0 +1,18 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Unauthenticated route redirects to login; formal self-registration is hidden",
+    "Private administrator logs in and sees the real dashboard",
+    "Administrator opens service monitoring and account management",
+    "Normal user logs in and retains the session after a reload",
+    "Normal user is blocked by the administrator route guard",
+    "Normal user creates a ticket through the HTTPS page",
+    "Browser comments and administrator ticket lifecycle are reflected to the user",
+    "768px dashboard has no horizontal overflow",
+    "Logout clears the browser session",
+    "No unhandled browser page errors"
+  ],
+  "pageErrors": [],
+  "localCertificateBypassForUiOnly": true,
+  "tlsVerification": "Separate formal_smoke.py requires CA-chain and hostname validation"
+}

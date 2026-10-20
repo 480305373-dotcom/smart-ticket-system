@@ -43,6 +43,8 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 30
     steps:
       - uses: actions/checkout@v7
+      - name: Verify delivery tool reporting
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -61,6 +63,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci && npm test && npm run build
         working-directory: frontend
+      - name: Record executable and frontend build evidence
+        run: python3 scripts/record_product_build.py
       - name: Deploy complete Docker stack
         shell: pwsh
         run: ./scripts/deploy-local.ps1 -Demo -Monitoring -Prebuilt -Build

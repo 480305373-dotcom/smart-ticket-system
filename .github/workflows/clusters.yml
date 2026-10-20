@@ -36,7 +36,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          for name in ('distributed-verification.json', 'distributed-restart-verification.json', 'kubernetes-verification.json', 'kubernetes-http-verification.json'):
+          for name in ('distributed-verification.json', 'distributed-restart-verification.json', 'kubernetes-verification.json', 'kubernetes-http-verification.json', 'capacity-verification.json', 'distributed-restore-verification.json', 'formal-verification.json', 'formal-restore-verification.json', 'formal-ui-verification.json'):
               (Path('docs') / name).unlink(missing_ok=True)
           PY
       - name: Start isolated 6-node Redis and 3-node RabbitMQ deployment
@@ -46,8 +46,31 @@ jobs:
         run: python scripts/distributed_restart_smoke.py --output docs/distributed-restart-verification.json
       - name: Verify discovery, ownership and real failover
         run: python scripts/distributed_smoke.py --faults
+      - name: Measure authenticated capacity and restore normal limits
+        run: python scripts/capacity_benchmark.py --stages 1,4,8 --duration 10
+      - name: Verify coordinated two-database backup and isolated restore
+        shell: pwsh
+        run: ./scripts/verify-restore.ps1 -Distributed
       - name: Release application memory before Kubernetes verification
         run: docker compose -p smartticket-cluster --env-file .runtime/distributed.env -f compose.distributed.yaml stop
+      - name: Deploy independent formal HTTPS configuration
+        shell: pwsh
+        run: ./scripts/deploy-formal.ps1 -SkipBuild -SkipImageBuild
+      - name: Verify formal certificates, permissions and business workflow
+        run: python scripts/formal_smoke.py
+      - name: Verify formal database recovery
+        shell: pwsh
+        run: ./scripts/verify-restore.ps1 -Formal
+      - name: Install browser verification dependencies
+        run: |
+          npm install --prefix .runtime/browser-tools --no-audit --no-fund playwright@1.62.1
+          node .runtime/browser-tools/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Verify formal browser workflow
+        env:
+          PLAYWRIGHT_MODULE: ../.runtime/browser-tools/node_modules/playwright
+        run: node scripts/formal_ui_smoke.cjs
+      - name: Release formal application memory before Kubernetes verification
+        run: docker compose -p smartticket-formal --env-file .runtime/formal.env -f compose.distributed.yaml -f compose.formal.yaml stop
       - name: Install checksum-verified kind
         run: |
           mkdir -p .runtime/tools
@@ -82,5 +105,10 @@ jobs:
             docs/distributed-restart-verification.json
             docs/kubernetes-verification*.json
             docs/kubernetes-http-verification.json
+            docs/capacity-verification.json
+            docs/distributed-restore-verification.json
+            docs/formal-verification.json
+            docs/formal-restore-verification.json
+            docs/formal-ui-verification.json
             .runtime/distributed-verification-failure.json
             .runtime/kubernetes-verification-failure.json

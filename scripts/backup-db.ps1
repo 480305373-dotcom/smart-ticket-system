@@ -1,5 +1,14 @@
-param([switch]$Production)
+param([switch]$Production,[switch]$Distributed,[switch]$Formal)
 $ErrorActionPreference='Stop'
+if((@($Production,$Distributed,$Formal | Where-Object {$_})).Count -gt 1){throw 'Choose one deployment mode.'}
+if($Formal){
+    & python (Join-Path $PSScriptRoot 'distributed_backup.py') --formal backup
+    exit $LASTEXITCODE
+}
+if($Distributed){
+    & python (Join-Path $PSScriptRoot 'distributed_backup.py') backup
+    exit $LASTEXITCODE
+}
 $ticketRoot=Split-Path -Parent $PSScriptRoot
 $ticketContainer=if($Production){'smartticket-prod-postgres'}else{'smartticket-postgres'}
 $ticketStamp=Get-Date -Format 'yyyyMMdd-HHmmss'

@@ -1,6 +1,6 @@
 # 完整版运行与运维
 
-本轮在原项目上扩展，保留原工单、权限、评论、历史和知识库流程。源码仍为 Java 21 / Spring Boot 4.1.1 / Vue 3，没有改成微服务。已有本机 PostgreSQL 数据库保留，完整模式默认使用原 Compose 的 5433 数据库。
+本文介绍保留的单体完整版模式，源码为 Java 21 / Spring Boot 4.1.1 / Vue 3，默认使用原 Compose 的 5433 数据库。项目另外提供独立知识服务、集群与正式 HTTPS 部署；当前成品入口见 [正式部署指南](FORMAL_DEPLOYMENT.md)，服务边界见 [分布式指南](DISTRIBUTED_GUIDE.md)。已有本机 PostgreSQL 数据库保留。
 
 ## 启动选择
 

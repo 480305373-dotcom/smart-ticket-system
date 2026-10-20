@@ -1,0 +1,6 @@
+# Local capacity measurement only. Authentication and the Redis Lua limiter stay enabled.
+# Never include this override in the normal or formal deployment command.
+services:
+  backend:
+    environment:
+      APP_RATE_LIMIT_PER_MINUTE: "120000"

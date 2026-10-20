@@ -225,7 +225,7 @@
         "/opt/init.sh"
       ],
       "labels": {
-        "smartticket.config-sha256": "2126bbe951b442cc77095d272d684b2c370d32cd040f27fd1c106a0563a193fe"
+        "smartticket.config-sha256": "c43b0502f2a29e3704c8951b54d3b38142e31ba66c3a0e432da3cb79b3042845"
       },
       "environment": {
         "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}"

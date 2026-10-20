@@ -68,6 +68,8 @@ RabbitMQ：3 节点，审计主队列与死信队列均采用 3 副本 Quorum
 
 节点启动时公告当前容器/Pod IP，同时保留稳定主机名。已有集群启动时通过 DNS 与 CLUSTER MEET 刷新节点地址，并等待每个副本的复制链路恢复；仅检查 cluster_state:ok 不足以证明副本可接管。启动脚本变更会触发节点配置更新，Kubernetes 部署脚本会重建一次性初始化 Job，保留 StatefulSet 数据卷。`distributed_restart_smoke.py` 重新创建本项目容器和网络，验证 Redis 节点 ID、持久化探针、当前公告地址、3 条复制链路和 HTTP 登录；CI 随后继续执行真实主节点停机验证。
 
+就绪检查还要求所有节点对主节点的配置纪元与槽归属达成一致。历史异常拓扑若仍有纪元分歧，初始化会拒绝就绪，保留数据供检查；不会自动强制提升副本、修改槽归属或删除节点配置。配置纪元及投票规则见 [Redis Cluster 官方规范](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/)。
+
 核心配置多个种子地址、最大重定向次数、Lettuce 自适应与定时拓扑刷新。缓存、登录失败计数、限流和撤销标记复用原实现，Lua 限流只操作一个 key，不依赖跨槽原子操作。
 
 节点间和客户端都使用密码，Redis 端口不映射到宿主机。缓存继续按权限隔离，清理用 SCAN；撤销仍以 PostgreSQL 为持久依据。

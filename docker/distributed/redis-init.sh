@@ -28,6 +28,7 @@ fi
 
 for attempt in $(seq 1 90); do
   ready=true
+  topology=""
   for address in $hosts; do
     host=${address%:6379}
     if ! redis-cli -h "$host" cluster info | grep -q 'cluster_state:ok'; then ready=false; fi
@@ -35,6 +36,12 @@ for attempt in $(seq 1 90); do
     if printf '%s' "$replication" | grep -q '^role:slave'; then
       if ! printf '%s' "$replication" | grep -q '^master_link_status:up'; then ready=false; fi
     elif ! printf '%s' "$replication" | grep -Eq '^connected_slaves:[1-9]'; then ready=false
+    fi
+    # A connected replica is not enough: every node must agree on each primary's
+    # epoch and slots before an automatic election can safely obtain votes.
+    view=$(redis-cli -h "$host" cluster nodes | awk '$3 ~ /master/ {printf "%s %s ",$1,$7; for(i=9;i<=NF;i++)printf "%s ",$i; print ""}' | sort)
+    if [ -z "$topology" ]; then topology=$view
+    elif [ "$topology" != "$view" ]; then ready=false
     fi
   done
   if [ "$ready" = true ]; then echo 'Redis slots and every replication link are ready'; exit 0; fi

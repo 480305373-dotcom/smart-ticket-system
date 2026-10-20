@@ -45,7 +45,7 @@
 
 构建证据：[product-build-verification.json](product-build-verification.json)。正式 API 与浏览器证据：[formal-verification.json](formal-verification.json)、[formal-ui-verification.json](formal-ui-verification.json)。证书校验由正式 API 验收独立完成；UI 测试的本机证书例外仅存在于测试浏览器上下文。
 
-GitHub 工作流已加入压测、双库恢复、正式部署与浏览器回归，实际云端结论以对应运行结果为准；本机通过不表述为云端已经通过。
+GitHub 对业务源码 `05f7af7` 的[应用构建与部署验证](https://github.com/480305373-dotcom/smart-ticket-system/actions/runs/39374711421)和[分布式完整验收](https://github.com/480305373-dotcom/smart-ticket-system/actions/runs/39374711365)均已通过。后者覆盖压测、双库恢复、正式 HTTPS、浏览器流程以及 Kubernetes 故障自愈。云端正式部署未启用 AI；真实 RAG 出处验证来自上述本机报告。
 
 ## 成品包
 

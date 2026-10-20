@@ -9,7 +9,7 @@ on:
       release_tag:
         description: Existing draft release tag
         type: string
-        default: v1.0.0
+        default: v1.1.0
   push:
     branches: [main, 'codex/**']
   pull_request:
@@ -81,7 +81,7 @@ jobs:
           path: docs/deployment-verification.json
       - name: Package verified release
         if: github.event_name == 'workflow_dispatch' && inputs.publish_release
-        run: python3 scripts/package_release.py
+        run: python3 scripts/package_release.py --product
       - name: Save release binaries
         if: github.event_name == 'workflow_dispatch' && inputs.publish_release
         uses: actions/upload-artifact@v4

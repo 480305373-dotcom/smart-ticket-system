@@ -6,6 +6,7 @@
 
 - Docker 与支持 `!override` 的 Docker Compose；建议为 Docker 准备至少 8 GiB 内存，避免同时运行多套集群。
 - PowerShell 7.5 或更新版本，用于跨平台脚本和完整的本机证书生成。
+- Python 3.10 或更新版本，用于部署文件校验、成品封装与验收工具。
 - 从源码构建还需要 Java 21、Maven、Node.js 22；成品 ZIP 已附可执行 JAR 和前端 dist，可跳过源码构建。
 - 开启 AI 时，宿主机 Ollama 需要事先准备 `qwen3:4b` 和 `nomic-embed-text`。模型不随成品 ZIP 分发。
 

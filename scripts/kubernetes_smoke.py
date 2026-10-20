@@ -51,8 +51,16 @@ def main():
     victim=next(p['metadata']['name'] for p in get('pods') if p['metadata'].get('labels',{}).get('app')=='knowledge')
     kubectl('delete','pod',victim,'--wait=false')
     kubectl('rollout','status','deployment/knowledge','--timeout=180s')
+    # Deployment status can converge before an old Pod finishes its graceful drain.
+    # Check actual deletion and the replacement's readiness, not a stale status snapshot.
+    def replacement_ready():
+        pods=get('pods')
+        knowledge=[p for p in pods if p['metadata'].get('labels',{}).get('app')=='knowledge']
+        return victim not in {p['metadata']['name'] for p in pods} and len(knowledge)==2 and all(
+            any(c['type']=='Ready' and c['status']=='True' for c in p['status'].get('conditions',[])) for p in knowledge)
+    eventually(replacement_ready,180)
     eventually(lambda:request(base,'/knowledge',token=token)[0]==200)
-    record('deleted knowledge pod is automatically replaced',victim not in {p['metadata']['name'] for p in get('pods')})
+    record('deleted knowledge pod is automatically replaced',True)
     kubectl('rollout','restart','deployment/knowledge')
     deadline=time.monotonic()+180;successful=0
     while time.monotonic()<deadline:
